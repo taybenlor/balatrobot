@@ -65,6 +65,10 @@ function Utils.getBlindData()
         _blinds.ondeck = G.GAME.blind_on_deck
     end
 
+    if G and G.GAME and G.GAME.blind and G.GAME.blind.name then
+        _blinds.name = G.GAME.blind.name
+    end
+
     return _blinds
 end
 

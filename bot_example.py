@@ -1,3 +1,4 @@
+import time
 from bot import Bot, Actions
 
 
@@ -82,7 +83,13 @@ def rearrange_hand(self, G):
 
 
 if __name__ == "__main__":
-    mybot = Bot(deck="Plasma Deck", stake=1, seed="1OGB5WO")
+    mybot = Bot(
+        deck="Blue Deck",
+        stake=1,
+        seed=None,
+        challenge=None,
+        bot_port=12345
+    )
 
     mybot.skip_or_select_blind = skip_or_select_blind
     mybot.select_cards_from_hand = select_cards_from_hand
@@ -94,4 +101,8 @@ if __name__ == "__main__":
     mybot.rearrange_consumables = rearrange_consumables
     mybot.rearrange_hand = rearrange_hand
 
+    mybot.start_balatro_instance()
+    time.sleep(20)
+
+    mybot.run_step()
     mybot.run()

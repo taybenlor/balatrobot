@@ -119,7 +119,7 @@ class Bot:
 
     def start_balatro_instance(self):
         balatro_exec_path = (
-            r"C:\Program Files (x86)\Steam\steamapps\common\Balatro\Balatro.exe"
+            r"E:\SteamLibrary\steamapps\common\Balatro\Balatro.exe"
         )
         self.balatro_instance = subprocess.Popen(
             [balatro_exec_path, str(self.bot_port)]
@@ -243,3 +243,4 @@ class Bot:
     def run(self):
         while self.running:
             self.run_step()
+            time.sleep(1)

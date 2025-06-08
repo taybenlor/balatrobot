@@ -5,6 +5,8 @@ function Utils.getCardData(card)
     local _card = { }
 
     _card.label = card.label
+    _card.cost = card.cost
+    _card.debuff = card.debuff
     _card.name = card.config.card.name
     _card.suit = card.config.card.suit
     _card.value = card.config.card.value
@@ -63,6 +65,10 @@ function Utils.getBlindData()
 
     if G and G.GAME then
         _blinds.ondeck = G.GAME.blind_on_deck
+    end
+
+    if G and G.GAME and G.GAME.blind and G.GAME.blind.name then
+        _blinds.name = G.GAME.blind.name
     end
 
     return _blinds

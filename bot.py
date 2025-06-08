@@ -243,3 +243,4 @@ class Bot:
     def run(self):
         while self.running:
             self.run_step()
+            time.sleep(1)

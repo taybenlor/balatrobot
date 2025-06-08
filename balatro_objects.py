@@ -3,8 +3,6 @@ from enum import Enum, IntEnum
 from collections import Counter
 from itertools import combinations
 
-
-
 class Hand:
     def __init__(self, cards):
         self.cards = cards

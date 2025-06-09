@@ -51,10 +51,10 @@ class Hand:
 
     # Are hands playable (in order of their poker ranking)
     def get_royal_flush(self):
-        ROYAL_VALUES = {'10', 'J', 'Q', 'K', 'A'}
+        ROYAL_VALUES = [CardRankings.TEN, CardRankings.JACK, CardRankings.QUEEN, CardRankings.KING, CardRankings.ACE]
         for five_cards in combinations(self.cards, 5):
             suits = {card.suit for card in five_cards}
-            values = {card.value for card in five_cards}
+            values = sorted(card.get_card_ranking() for card in five_cards)
             if len(suits) == 1 and values == ROYAL_VALUES:
                 # By golly, we've actually got one!
                 # Fun fact, the odds of getting a royal flush are 1 in 649,739 (with a standard 52 card deck)
@@ -63,17 +63,14 @@ class Hand:
         return []
 
     def get_straight_flush(self):
-        possible_hands = []
+        # TODO: How to return the top straight flush?
         for five_cards in combinations(self.cards, 5):
             suits = {card.suit for card in five_cards}
-            values = {card.value for card in five_cards}
-            # TODO: let's confirm how we determine values here!
-            if len(suits) == 1 and values == []:
+            values = sorted(card.get_card_ranking() for card in five_cards)
+            alt_values = sorted([CardRankings.ONE if v == CardRankings.ACE else v for v in values])
+            if len(suits) == 1 and all(values[i] == values[i - 1] + 1 for i in range(1, 5)) or all(alt_values[i] == alt_values[i - 1] + 1 for i in range(1, 5)):
                 print("I can play a Straight Flush!")
-                possible_hands.append(five_cards)
-        if len(possible_hands) > 0:
-            # TODO: let's return the highest straight flush
-            return possible_hands[0]
+                return [card.index for card in five_cards]
         return []
 
     def get_four_of_a_kind(self):
@@ -97,7 +94,6 @@ class Hand:
             # We have the components of a full house.
             print("I can play a Full House!")
             if groups_of_three >= 2:
-                print("We have at least two groups of three of a kind, easy pasy!")
                 cards = self.get_most_common_cards(value_count=value_count)
                 # we will potentially get >5 cards back via this function
                 # let's cut this down to only 5 cards
@@ -105,17 +101,15 @@ class Hand:
             else:
                 # We have to get our initial group of 3 cards, then find whatever groups of two we have
                 # and selected the highest group of two, and combine with the initial 3
-                print("We need to combine a three and a two!")
-                first_group_cards = self.get_three_of_a_kind()
-                print("First group of cards: {}".format(first_group_cards))
+                first_group_indexes = self.get_three_of_a_kind()
                 second_most_common_frequency = heapq.nlargest(2, value_count.values())[1]
                 second_most_common_values = [value for value, count in value_count.items() if count == second_most_common_frequency]
                 second_group_cards = []
                 for value in second_most_common_values:
                     second_group_cards.extend(self.get_cards_with_value(value=value))
                     second_group_cards.sort(key=lambda card: card.get_card_ranking(), reverse=True)
-                print("Second group of cards: {}".format(second_group_cards))
-                return first_group_cards.extend([card.index for card in second_group_cards[:2]])
+                second_group_indexes = [card.index for card in second_group_cards[:2]]
+                return first_group_indexes + second_group_indexes
         return []
 
     def get_flush(self):
@@ -132,7 +126,6 @@ class Hand:
     def get_straight(self):
         # TODO: Determine what the highest straight would be, rather than just returning
         # a response the first time we find something that matches our conditional.
-        # TODO: Fix - this doesn't work!
         for five_cards in combinations(self.cards, 5):
             values = sorted(card.get_card_ranking() for card in five_cards)
             alt_values = [1 if v == 14 else v for v in values].sort()

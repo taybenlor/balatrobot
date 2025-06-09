@@ -105,8 +105,16 @@ def select_cards_from_hand(self, G):
     # We're going to be playing a hand now whether we like it or not.
 
     self.state["hands_played"] += 1
-    if play_hand:
+    if play_hand and len(play_hand) < 5:
         # We've found an alternative hand to play
+        # but we should discard some cards with it
+        index = 0
+        while len(play_hand) < 5:
+            play_hand.append(discard_hand[index])
+            index += 1
+        print("Playing an alternative hand (with discards): {}".format(play_hand))
+        return [Actions.PLAY_HAND, play_hand]
+    elif play_hand:
         print("Playing an alternative hand: {}".format(play_hand))
         return [Actions.PLAY_HAND, play_hand]
     else:
@@ -148,14 +156,19 @@ def select_shop_action(self, G):
 
     # let's check jokers
     for index, joker in enumerate(G["shop"]["cards"]):
+        print("Checking Jokers in Shop!")
         cost = joker["cost"]
         label = joker["label"]
         affordable = cost < current_dollars
+        print("{}: ${} ({})".format(label, cost, affordable))
         if label in multi_based_jokers and affordable:
+            print("Going to buy Joker: {}!".format(label))
             return [Actions.BUY_CARD, [index + 1]]
         elif label in chip_based_jokers and affordable:
+            print("Going to buy Joker: {}".format(label))
             return [Actions.BUY_CARD, [index + 1]]
         elif label in other_jokers and affordable:
+            print("Going to buy Joker: {}".format(label))
             return [Actions.BUY_CARD, [index + 1]]
 
     # let's check boosters
@@ -181,9 +194,9 @@ def select_booster_action(self, G):
 
 
 def sell_jokers(self, G):
-    if len(G["jokers"]) > 1:
-        return [Actions.SELL_JOKER, [2]]
-
+    # Let's not sell jokers for the moment hey...
+    # if len(G["jokers"]) > 1:
+    #     return [Actions.SELL_JOKER, [2]]
     return [Actions.SELL_JOKER, []]
 
 

@@ -80,6 +80,22 @@ class Bot:
 
         self.state = {}
 
+        self.prioritization_config = {
+            # joker pirorities
+            'flush_priority_jokers': [],
+            'multi_based_jokers': ['Cavendish','Gros Michel','Misprint','Joker','Greedy Joker','Lusty Joker','Wrathful Joker','Gluttonous Joker','Droll Joker','Photograph','Popcorn','Smiley Face','Joker Stencil','Loyalty Card','Fibonacci','Card Sharp','Ramen','Baseball Card','Raised Fist', 'Abstract Joker', 'Even Steven', 'Supernova'],
+            'chip_based_jokers': ['Crafty Joker', 'Hiker', 'Banner', 'Odd Todd', 'Scary Face', 'Ice Cream', 'Blue Joker'],
+            'other_jokers': ['Four Fingers', 'Turtle Bean', 'Mr. Bones'],
+            # planet card priorities
+            'priority_planet_cards': ["Jupiter", "Neptune"],
+            # tarot card priotities
+            'priority_tarot_cards': ["Black Hole"],
+            # voucher priorities
+            'priority_vouchers': [],
+            # spectral priorities
+            'priority_spectral_cards': ["Familiar", "Grim", "Incantation", "Sigil", "The Soul", "Black Hole"]
+        }
+
     def skip_or_select_blind(self):
         raise NotImplementedError(
             "Error: Bot.skip_or_select_blind must be implemented."

@@ -109,11 +109,12 @@ def select_cards_from_hand(self, G):
         # We've found an alternative hand to play
         # but we should discard some cards with it
         index = 0
-        while len(play_hand) < 5:
-            play_hand.append(discard_hand[index])
+        while len(play_hand) < 5 and index < len(discard_hand):
+            if discard_hand[index] not in play_hand:
+                play_hand.append(discard_hand[index])
             index += 1
         print("Playing an alternative hand (with discards): {}".format(play_hand))
-        return [Actions.PLAY_HAND, play_hand]
+        return [Actions.PLAY_HAND, list(play_hand)]
     elif play_hand:
         print("Playing an alternative hand: {}".format(play_hand))
         return [Actions.PLAY_HAND, play_hand]
@@ -144,52 +145,119 @@ def select_shop_action(self, G):
         idx = voucher_names.index("Clearance Sale")
         return [Actions.BUY_VOUCHER, [idx + 1]]
 
-    multi_based_jokers = [
-        'Cavendish','Gros Michel','Misprint','Joker','Greedy Joker','Lusty Joker','Wrathful Joker','Gluttonous Joker','Droll Joker','Photograph','Popcorn','Smiley Face','Joker Stencil','Loyalty Card','Fibonacci','Card Sharp','Ramen','Baseball Card','Raised Fist', 'Abstract Joker', 'Even Steven', 'Supernova',
-    ]
-    chip_based_jokers = [
-        'Crafty Joker', 'Hiker', 'Banner', 'Odd Todd', 'Scary Face', 'Ice Cream', 'Blue Joker'
-    ]
-    other_jokers = [
-        'Four Fingers', 'Turtle Bean', 'Mr. Bones'
-    ]
-
     # let's check jokers
-    for index, joker in enumerate(G["shop"]["cards"]):
-        print("Checking Jokers in Shop!")
-        cost = joker["cost"]
-        label = joker["label"]
+    print("Checking Jokers in Shop!")
+    for index, card in enumerate(G["shop"]["cards"]):
+        cost = card["cost"]
+        label = card["label"]
+        card_set = card["ability"]["set"]
         affordable = cost < current_dollars
-        print("{}: ${} ({})".format(label, cost, affordable))
-        if label in multi_based_jokers and affordable:
-            print("Going to buy Joker: {}!".format(label))
-            return [Actions.BUY_CARD, [index + 1]]
-        elif label in chip_based_jokers and affordable:
-            print("Going to buy Joker: {}".format(label))
-            return [Actions.BUY_CARD, [index + 1]]
-        elif label in other_jokers and affordable:
-            print("Going to buy Joker: {}".format(label))
-            return [Actions.BUY_CARD, [index + 1]]
+        print("Looking at card: {}".format(label))
+        # default max jokers is 5, but we should increase this number if there
+        # are any 'negative' jokers in our joker list
+        if card_set == 'Joker' and len(G['jokers']) < 5:
+            if label in self.prioritization_config['flush_priority_jokers'] and affordable:
+                print("Going to buy Joker: {}!".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+            elif label in self.prioritization_config['multi_based_jokers'] and affordable:
+                print("Going to buy Joker: {}!".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+            elif label in self.prioritization_config['chip_based_jokers'] and affordable:
+                print("Going to buy Joker: {}".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+            elif label in self.prioritization_config['other_jokers'] and affordable:
+                print("Going to buy Joker: {}".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+        elif card_set == 'Planet':
+            if label in self.prioritization_config['priority_planet_cards'] and affordable:
+                print("Going to buy priority planet card: {}".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+            elif affordable and cost * 3 < current_dollars:
+                print("We have more than enough money for this planet card, we're going to buy it!")
+                return [Actions.BUY_CARD, [index + 1]]
+        elif card_set == 'Tarot':
+            if label in self.prioritization_config['priority_tarot_cards'] and affordable:
+                print("Going to buy priority tarot card: {}".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
+        print("Decided to skip card!")
 
-    # let's check boosters
-    # TODO: Figure this out once we've implemented select_booster_action()
+    # Let's check the booster packs
+    for index, booster in enumerate(G["shop"]["boosters"]):
+        cost = booster["cost"]
+        label = booster["label"]
+        affordable = cost < current_dollars
+        print("Looking at booster pack: {}".format(label))
+        if "Standard" not in label and "Spectral" not in label:
+            print("Going to buy booster pack!")
+            return [Actions.BUY_BOOSTER, [index + 1]]
 
     # let's check other vouchers
-    priority_vouchers = []
     for index, voucher in enumerate(G["shop"]["vouchers"]):
         cost = voucher["cost"]
         label = voucher["label"]
         affordable = cost < current_dollars
-        if label in priority_vouchers and affordable:
+        if label in self.prioritization_config['priority_vouchers'] and affordable:
             return [Actions.BUY_VOUCHER, [index + 1]]
+        
+    if G["shop"]["reroll_cost"] * 2 < current_dollars:
+        # We have enough money to do a re-roll
+        # Let's see if we can get anything better
+        print("Performing re-roll in shop, we have more than double the money of a re-roll!")
+        return [Actions.REROLL_SHOP]
 
     # Nothing else left to do!
     return [Actions.END_SHOP]
 
 
 def select_booster_action(self, G):
+
+    if G['pack_cards'][0]['ability']['set'] == "Planet":
+        for index, planet_card in enumerate(G["pack_cards"]):
+            if planet_card['label'] in self.prioritization_config['priority_planet_cards']:
+                print("Choosing to select a priority planet card!")
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+        print("Choosing to select first booster card instead!")
+        return [Actions.SELECT_BOOSTER_CARD, [1], []]
+
+    if G['pack_cards'][0]['ability']['set'] == "Tarot":
+        for index, tarot_card in enumerate(G["pack_cards"]):
+            if tarot_card['label'] in self.prioritization_config['priority_tarot_cards']:
+                print("Choosing to select a priority tarot card!")
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+        for index, tarot_card in enumerate(G['pack_cards']):
+            if tarot_card['ability'].get('max_highlighted') is None:
+                print("Choosing to select tarot that doesn't need to select cards in the deck - {} at position {}!".format(tarot_card['label'], index+1))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+    
+    if G['pack_cards'][0]['ability']['set'] == "Joker" and len(G['jokers']) < 5:
+        for index, joker in enumerate(G['pack_cards']):
+            label = joker['label']
+            if label in self.prioritization_config['flush_priority_jokers']:
+                print("Going to select Joker: {}!".format(label))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+            elif label in self.prioritization_config['multi_based_jokers']:
+                print("Going to select Joker: {}!".format(label))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+            elif label in self.prioritization_config['chip_based_jokers']:
+                print("Going to select Joker: {}".format(label))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+            elif label in self.prioritization_config['other_jokers']:
+                print("Going to select Joker: {}".format(label))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+        print("Choosing to select first joker (maybe it will help?)")
+        return [Actions.SELECT_BOOSTER_CARD, [1]]
+
+    if G['pack_cards'][0]['ability']['set'] == "Spectral":
+        for index, spectral_card in enumerate(G['pack_cards']):
+            label = spectral_card['label']
+            if label in self.prioritization_config['priority_spectral_cards']:
+                print('Going to select priority spectral card: {}!'.format(label))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+            if spectral_card['ability'].get('max_highlighted') is None:
+                print("Choosing to select spectral card that doesn't need to select cards in the deck - {} at position {}!".format(tarot_card['label'], index+1))
+                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+
     print("Choosing to Skip Booster Pack!")
-    print("Here is G: {}".format(G))
     return [Actions.SKIP_BOOSTER_PACK]
 
 

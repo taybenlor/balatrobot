@@ -240,16 +240,21 @@ function Middleware.c_choose_booster_cards()
         elseif _action == Bot.ACTIONS.SELECT_BOOSTER_CARD then
     
             -- Click each card from your deck first (only occurs if _pack_card is consumable)
-            for i = 1, #_hand_cards do
-                clickcard(G.hand.cards[_hand_cards[i]])
-            end
+            -- Note: when this is uncommented, the game crashes, lol
+            -- for i = 1, #_hand_cards do
+            --     clickcard(G.hand.cards[_hand_cards[i]])
+            -- end
     
             -- Then select the booster card to activate
             clickcard(G.pack_cards.cards[_card[1]])
             usecard(G.pack_cards.cards[_card[1]])
         end
     
-        if G.GAME.pack_choices - 1 > 0 then
+        -- Note: When this is uncommented, and we skip a booster pack,
+        -- this causes the game to hang on waiting to choose booster cards,
+        -- even though the game state has moved onto choosing the next blind/boss.
+        -- -------
+        if G.GAME.pack_choices -1 > 0 and (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK or G.STATE == G.STATES.STANDARD_PACK or G.STATE == G.STATES.BUFFOON_PACK or G.STATE == G.STATES.PLANET_PACK) then
             queueaction(function()
                 firewhenready(function()
                     return Middleware.BUTTONS.SKIP_PACK ~= nil and
@@ -260,8 +265,7 @@ function Middleware.c_choose_booster_cards()
                     Middleware.c_choose_booster_cards()
                 end)
             end, 0.0)
-        else
-            if G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
+        elseif G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
                 queueaction(function()
                     firewhenready(function()
                         return G.STATE_COMPLETE and G.STATE == G.STATES.BLIND_SELECT
@@ -270,8 +274,17 @@ function Middleware.c_choose_booster_cards()
                         Middleware.c_select_blind()
                     end)
                 end, 0.0)
-            end
+        elseif G.GAME.PACK_INTERRUPT == G.STATES.SHOP then
+            queueaction(function()
+                firewhenready(function()
+                    return G.STATE_COMPLETE and G.STATE == G.STATES.SHOP
+                end, function()
+                    Middleware.choosingboostercards = false
+                    Middleware.c_shop()
+                end)
+            end, 0.0)
         end
+        -- end
     end)
 
 end

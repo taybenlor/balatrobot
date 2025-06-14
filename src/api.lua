@@ -144,7 +144,6 @@ function BalatrobotAPI.init()
             BalatrobotAPI.waitingForAction = true
         end)
         Middleware.c_shop = Hook.addbreakpoint(Middleware.c_shop, function()
-            sendDebugMessage('SELECT SHOP ACTION')
             BalatrobotAPI.waitingFor = 'select_shop_action'
             BalatrobotAPI.waitingForAction = true
         end)

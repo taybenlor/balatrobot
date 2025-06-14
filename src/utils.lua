@@ -12,6 +12,10 @@ function Utils.getCardData(card)
     _card.value = card.config.card.value
     _card.card_key = card.config.card_key
 
+    if card.ability then
+        _card.ability = card.ability
+    end
+
     return _card
 end
 
@@ -32,6 +36,19 @@ function Utils.getHandData()
     end
 
     return _hand
+end
+
+function Utils.getPackCardsData()
+    local _pack = { }
+
+    if G and G.pack_cards and G.pack_cards.cards then
+        for i = 1, #G.pack_cards.cards do
+            local _card = Utils.getCardData(G.pack_cards.cards[i])
+            _pack[i] = _card
+        end
+    end
+
+    return _pack
 end
 
 function Utils.getJokersData()
@@ -120,6 +137,13 @@ end
 function Utils.getTagsData()
     local _tags = { }
 
+    if G and G.GAME.tags then
+        for i = 1, #G.GAME.tags do
+            local _tag = Utils.getTag(G.GAME.tags[i])
+            _tags[i] = _tag
+        end
+    end
+
     return _tags
 end
 
@@ -153,6 +177,14 @@ function Utils.getGameData()
     return _game
 end
 
+function Utils.getTag(tag)
+    local _tag = { }
+
+    _tag.name = tag.name
+
+    return _tag
+end
+
 function Utils.getGamestate()
     -- TODO
     local _gamestate = { }
@@ -169,6 +201,7 @@ function Utils.getGamestate()
     _gamestate.handscores = Utils.getHandScoreData()
     _gamestate.tags = Utils.getTagsData()
     _gamestate.current_round = Utils.getRoundData()
+    _gamestate.pack_cards = Utils.getPackCardsData()
 
     return _gamestate
 end

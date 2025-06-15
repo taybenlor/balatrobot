@@ -227,51 +227,70 @@ def select_shop_action(self, G):
 def select_booster_action(self, G):
 
     if G['pack_cards'][0]['ability']['set'] == "Planet":
+        maybe_indexes = []
         for index, planet_card in enumerate(G["pack_cards"]):
             if planet_card['label'] in self.prioritization_config['priority_planet_cards']:
                 print("Choosing to select a priority planet card!")
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
-        print("Choosing to select first booster card instead!")
-        return [Actions.SELECT_BOOSTER_CARD, [1], []]
+                maybe_indexes.append(index+1)
+        if maybe_indexes:
+            return [Actions.SELECT_BOOSTER_CARD, maybe_indexes, []]
+        else:
+            print("Choosing to select first 1-2 booster card/s instead!")
+            return [Actions.SELECT_BOOSTER_CARD, [1, 2], []]
 
     if G['pack_cards'][0]['ability']['set'] == "Tarot":
+        maybe_indexes = []
         for index, tarot_card in enumerate(G["pack_cards"]):
             if tarot_card['label'] in self.prioritization_config['priority_tarot_cards']:
                 print("Choosing to select a priority tarot card!")
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+                maybe_indexes.append(index+1)
         for index, tarot_card in enumerate(G['pack_cards']):
             if tarot_card['ability'].get('max_highlighted') is None and (tarot_card['label'] == "The Fool" and len(tarot_card['ability']['consumeable']) > 1):
                 print("Choosing to select tarot that doesn't need to select cards in the deck - {} at position {}!".format(tarot_card['label'], index+1))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+                maybe_indexes.append(index+1)
+        if maybe_indexes:
+            return [Actions.SELECT_BOOSTER_CARD, maybe_indexes, []]
+        else:
+            # passing through hand indexes, just in case
+            return [Actions.SELECT_BOOSTER_CARD, [1, 2], [1, 2, 3]]
     
     if G['pack_cards'][0]['ability']['set'] == "Joker" and len(G['jokers']) < 5:
+        maybe_indexes = []
         for index, joker in enumerate(G['pack_cards']):
             label = joker['label']
             if label in self.prioritization_config['flush_priority_jokers']:
                 print("Going to select Joker: {}!".format(label))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+                maybe_indexes.append(index+1)
             elif label in self.prioritization_config['multi_based_jokers']:
                 print("Going to select Joker: {}!".format(label))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+                maybe_indexes.append(index+1)
             elif label in self.prioritization_config['chip_based_jokers']:
                 print("Going to select Joker: {}".format(label))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+                maybe_indexes.append(index+1)
             elif label in self.prioritization_config['other_jokers']:
                 print("Going to select Joker: {}".format(label))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
-        print("Choosing to select first joker (maybe it will help?)")
-        return [Actions.SELECT_BOOSTER_CARD, [1]]
+        if maybe_indexes:
+            return [Actions.SELECT_BOOSTER_CARD, maybe_indexes]
+        else:
+            print("Choosing to select first joker (maybe it will help?)")
+            return [Actions.SELECT_BOOSTER_CARD, [1]]
 
     if G['pack_cards'][0]['ability']['set'] == "Spectral":
+        maybe_indexes = []
         for index, spectral_card in enumerate(G['pack_cards']):
             label = spectral_card['label']
             if label in self.prioritization_config['priority_spectral_cards']:
                 print('Going to select priority spectral card: {}!'.format(label))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+                maybe_indexes.append(index+1)
         for index, spectral_card in enumerate(G['pack_cards']):
             if spectral_card['ability'].get('max_highlighted') is None:
                 print("Choosing to select spectral card that doesn't need to select cards in the deck - {} at position {}!".format(spectral_card['label'], index+1))
-                return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
+                maybe_indexes.append(index+1)
+        if maybe_indexes:
+            return [Actions.SELECT_BOOSTER_CARD, maybe_indexes, [1, 2, 3]]
+        else:
+            # passing through hand indexes, just in case
+            return [Actions.SELECT_BOOSTER_CARD, [1], [1,2,3]]
 
     print("Choosing to Skip Booster Pack!")
     return [Actions.SKIP_BOOSTER_PACK]

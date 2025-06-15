@@ -253,27 +253,28 @@ function Middleware.c_choose_booster_cards()
 
             -- Could we possibly process both card selections in the one go?
             -- Trying to fix the current issue that happens when you have to make two selections in a booster pack.
-            -- if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 then
-            --     clickcard(G.pack_cards.cards[_card[2]], 2)
-            --     usecard(G.pack_cards.cards[_card[2]], 2)
-            -- end
+            if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 then
+                clickcard(G.pack_cards.cards[_card[2]], 2)
+                usecard(G.pack_cards.cards[_card[2]], 2)
+            end
         end
 
-        sendDebugMessage(G.GAME.pack_choices)
-        sendDebugMessage(G.STATE)
-        if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 and G.STATE == 999 then
-            sendDebugMessage("Queueing choose booster card action!")
-            queueaction(function()
-                firewhenready(function()
-                    return Middleware.BUTTONS.SKIP_PACK ~= nil and
-                    Middleware.BUTTONS.SKIP_PACK.config.button == 'skip_booster' and
-                    Middleware.choosingboostercards == false and
-                    G and G.pack_cards and G.pack_cards.cards
-                end, function()
-                    Middleware.c_choose_booster_cards()
-                end)
-            end, 0.0)
-        elseif G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
+        -- We dont need to re-send this event if we're trying to do it in the one go.
+        -- This is the best way I was able to solve this small bug. It'll do for now.
+        --
+        -- if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 and G.STATE == 999 then
+        --     sendDebugMessage("Queueing choose booster card action!")
+        --     queueaction(function()
+        --         firewhenready(function()
+        --             return Middleware.BUTTONS.SKIP_PACK ~= nil and
+        --             Middleware.BUTTONS.SKIP_PACK.config.button == 'skip_booster' and
+        --             Middleware.choosingboostercards == false and
+        --             G and G.pack_cards and G.pack_cards.cards
+        --         end, function()
+        --             Middleware.c_choose_booster_cards()
+        --         end)
+        --     end, 0.0)
+        if G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
             sendDebugMessage("Queueing blind select action!")
             queueaction(function()
                     firewhenready(function()

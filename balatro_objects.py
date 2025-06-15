@@ -4,8 +4,9 @@ from collections import Counter
 from itertools import combinations
 
 class Hand:
-    def __init__(self, cards):
+    def __init__(self, cards, preferred_suit=None):
         self.cards = cards
+        self.preferred_suit = preferred_suit
 
     def __str__(self):
         return f'The hand contains {len(self.cards)} cards, with values {[card.card_key for card in self.cards]}'
@@ -68,7 +69,7 @@ class Hand:
             suits = {card.suit for card in five_cards}
             values = sorted(card.get_card_ranking() for card in five_cards)
             alt_values = sorted([CardRankings.ONE if v == CardRankings.ACE else v for v in values])
-            if len(suits) == 1 and all(values[i] == values[i - 1] + 1 for i in range(1, 5)) or all(alt_values[i] == alt_values[i - 1] + 1 for i in range(1, 5)):
+            if len(suits) == 1 and (all(values[i] == values[i - 1] + 1 for i in range(1, 5)) or all(alt_values[i] == alt_values[i - 1] + 1 for i in range(1, 5))):
                 print("I can play a Straight Flush!")
                 return [card.index for card in five_cards]
         return []
@@ -128,7 +129,7 @@ class Hand:
         # a response the first time we find something that matches our conditional.
         for five_cards in combinations(self.cards, 5):
             values = sorted(card.get_card_ranking() for card in five_cards)
-            alt_values = [1 if v == 14 else v for v in values].sort()
+            alt_values = sorted([CardRankings.ONE if v == CardRankings.ACE else v for v in values])
             if all(values[i] == values[i - 1] + 1 for i in range(1, 5)) or all(alt_values[i] == alt_values[i - 1] + 1 for i in range(1, 5)):
                 print("I can play a Straight!")
                 return [card.index for card in five_cards]

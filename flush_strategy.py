@@ -56,20 +56,26 @@ def select_cards_from_hand(self, G):
         cards=cards
     )
 
-    # What's the actual hand we're going to play?
-    play_hand = None
+    # Is there a flush or better we can play here?
+    play_hand = (
+        hand.get_royal_flush() if hand.get_royal_flush() else
+        hand.get_straight_flush() if hand.get_straight_flush() else
+        hand.get_four_of_a_kind() if hand.get_four_of_a_kind() else
+        hand.get_full_house() if hand.get_full_house() else
+        hand.get_flush() if hand.get_flush() else
+        None
+    )
 
-    if hand.get_flush():
-        # We can play a flush!
+    if play_hand:
+        # We can play a flush or better hand!
         self.state["hands_played"] += 1
-        play_hand = hand.get_flush()
         print("Going to play hand: {}".format(play_hand))
         return [
             Actions.PLAY_HAND,
             play_hand
         ]
     
-    # Okay, we can't play a flush, maybe we should try to discard instead!
+    # Okay, we can't play a flush or better, maybe we should try to discard instead!
     # Let's just firstly figure out what we should discard first.
     suit_count = hand.suit_check()
     discard_hand = []
@@ -77,7 +83,8 @@ def select_cards_from_hand(self, G):
     while len(discard_hand) < 5 and len(suit_count.keys()) > 1:
         least_common_suit = min(suit_count, key=suit_count.get)
         suit_count.pop(least_common_suit)
-        for card in hand.cards:
+        # always attach lower valued cards first for discard
+        for card in sorted(hand.cards, key=lambda card: card.get_card_ranking()):
             if card.suit == least_common_suit and len(discard_hand) < 5:
                 discard_hand.append(card.index)
     # If we have discards, let's go with this strategy.
@@ -90,12 +97,9 @@ def select_cards_from_hand(self, G):
 
     # We've really screwed the pooch here.
     # We don't have a valid flush to play, but we don't have any discards left either.
-    # What other hands could we play?
+    # What other basic hands could we play?
     play_hand = (
-        hand.get_royal_flush() if hand.get_royal_flush() else
-        hand.get_straight_flush() if hand.get_straight_flush() else
-        hand.get_four_of_a_kind() if hand.get_four_of_a_kind() else
-        hand.get_full_house() if hand.get_full_house() else
+        hand.get_straight() if hand.get_straight() else
         hand.get_three_of_a_kind() if hand.get_three_of_a_kind() else
         hand.get_two_pair() if hand.get_two_pair() else
         hand.get_pair() if hand.get_pair() else
@@ -137,7 +141,15 @@ def select_shop_action(self, G):
     # Except in the case that the "Clearance Sale" (25% off) voucher is available - we should buy this, provided we have a bit of money to spend afterwards
 
     # look at G["dollars"] - that's our current wallet
-    current_dollars = G["dollars"]
+    # but also check G["bankrupt_at"] - we might be able to go into debt
+    current_dollars = G["dollars"] - G["bankrupt_at"]
+    print("I think have have this amount: {}".format(current_dollars))
+
+    # TODO: do we want to immediately sell any jokers in order to make more money?
+    # potential_sell_action = self.sell_jokers(self, G)
+    # if len(potential_sell_action[1]) > 0:
+    #     # we have jokers we want to sell!
+    #     return potential_sell_action
 
     voucher_names = [voucher["label"] for voucher in G["shop"]["vouchers"]]
     if "Clearance Sale" in voucher_names and current_dollars >= 15:
@@ -168,6 +180,9 @@ def select_shop_action(self, G):
             elif label in self.prioritization_config['other_jokers'] and affordable:
                 print("Going to buy Joker: {}".format(label))
                 return [Actions.BUY_CARD, [index + 1]]
+            elif cost == 0:
+                print("Going to buy free Joker to sell: {}".format(label))
+                return [Actions.BUY_CARD, [index + 1]]
         elif card_set == 'Planet':
             if label in self.prioritization_config['priority_planet_cards'] and affordable:
                 print("Going to buy priority planet card: {}".format(label))
@@ -187,7 +202,7 @@ def select_shop_action(self, G):
         label = booster["label"]
         affordable = cost < current_dollars
         print("Looking at booster pack: {}".format(label))
-        if "Standard" not in label and "Spectral" not in label:
+        if "Standard" not in label and affordable:
             print("Going to buy booster pack!")
             return [Actions.BUY_BOOSTER, [index + 1]]
 
@@ -199,7 +214,7 @@ def select_shop_action(self, G):
         if label in self.prioritization_config['priority_vouchers'] and affordable:
             return [Actions.BUY_VOUCHER, [index + 1]]
         
-    if G["shop"]["reroll_cost"] * 2 < current_dollars:
+    if (G["shop"]["reroll_cost"] * 2 < current_dollars) or G["shop"]["reroll_cost"] == 0:
         # We have enough money to do a re-roll
         # Let's see if we can get anything better
         print("Performing re-roll in shop, we have more than double the money of a re-roll!")
@@ -225,7 +240,7 @@ def select_booster_action(self, G):
                 print("Choosing to select a priority tarot card!")
                 return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
         for index, tarot_card in enumerate(G['pack_cards']):
-            if tarot_card['ability'].get('max_highlighted') is None:
+            if tarot_card['ability'].get('max_highlighted') is None and (tarot_card['label'] == "The Fool" and len(tarot_card['ability']['consumeable']) > 1):
                 print("Choosing to select tarot that doesn't need to select cards in the deck - {} at position {}!".format(tarot_card['label'], index+1))
                 return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
     
@@ -253,8 +268,9 @@ def select_booster_action(self, G):
             if label in self.prioritization_config['priority_spectral_cards']:
                 print('Going to select priority spectral card: {}!'.format(label))
                 return [Actions.SELECT_BOOSTER_CARD, [index + 1]]
+        for index, spectral_card in enumerate(G['pack_cards']):
             if spectral_card['ability'].get('max_highlighted') is None:
-                print("Choosing to select spectral card that doesn't need to select cards in the deck - {} at position {}!".format(tarot_card['label'], index+1))
+                print("Choosing to select spectral card that doesn't need to select cards in the deck - {} at position {}!".format(spectral_card['label'], index+1))
                 return [Actions.SELECT_BOOSTER_CARD, [index + 1], []]
 
     print("Choosing to Skip Booster Pack!")
@@ -262,18 +278,34 @@ def select_booster_action(self, G):
 
 
 def sell_jokers(self, G):
-    # Let's not sell jokers for the moment hey...
-    # if len(G["jokers"]) > 1:
-    #     return [Actions.SELL_JOKER, [2]]
+    # Until I can work out how to trigger this while in the shop, its not worth using.
+    # We shouldn't sell jokers at the beginning of choosing a hand.
+    # -----
+    # main_jokers = self.prioritization_config['flush_priority_jokers'] + self.prioritization_config['multi_based_jokers'] + self.prioritization_config['chip_based_jokers'] + self.prioritization_config['other_jokers'] 
+    # for index, joker in enumerate(G['jokers']):
+    #     label = joker["label"]
+    #     if label not in main_jokers:
+    #         print("We have a joker we want to get rid of - {} at position {}!".format(label, index+1))
+    #         return [Actions.SELL_JOKER, [index+1]]
     return [Actions.SELL_JOKER, []]
 
 
 def rearrange_jokers(self, G):
+    # what is the preferred order?
+    # 1 - additional chips
+    # 2 - additional multi (quantity)
+    # 3 - additional multi (multiplier)
     return [Actions.REARRANGE_JOKERS, []]
 
 
 def use_or_sell_consumables(self, G):
-    return [Actions.USE_CONSUMABLE, []]
+    for index, card in enumerate(G['consumables']):
+        if card['ability'].get('max_highlighted') is None:
+            print("Choosing to use consumable that doesn't need to be used on select cards in deck - {} at position {}!".format(card['label'], index+1))
+            return [Actions.USE_CONSUMABLE, [index+1]]
+        else:
+            return [Actions.SELL_CONSUMABLE, [index+1]]
+    return [Actions.SELL_CONSUMABLE, []]
 
 
 def rearrange_consumables(self, G):

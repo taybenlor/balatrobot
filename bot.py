@@ -89,9 +89,9 @@ class Bot:
             # planet card priorities
             'priority_planet_cards': ["Jupiter", "Neptune"],
             # tarot card priotities
-            'priority_tarot_cards': ["Black Hole"],
+            'priority_tarot_cards': ["Black Hole", "The High Priestess", "The Hermit", "The Wheel of Fortune", "Temperance", "Judgement"],
             # voucher priorities
-            'priority_vouchers': [],
+            'priority_vouchers': ['Clearance Sale', 'Grabber', 'Wasteful', 'Paint Brush'],
             # spectral priorities
             'priority_spectral_cards': ["Familiar", "Grim", "Incantation", "Sigil", "The Soul", "Black Hole"]
         }

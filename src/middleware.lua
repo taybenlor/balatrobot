@@ -238,23 +238,31 @@ function Middleware.c_choose_booster_cards()
         if _action == Bot.ACTIONS.SKIP_BOOSTER_PACK then
             pushbutton(Middleware.BUTTONS.SKIP_PACK)
         elseif _action == Bot.ACTIONS.SELECT_BOOSTER_CARD then
-    
             -- Click each card from your deck first (only occurs if _pack_card is consumable)
-            -- Note: when this is uncommented, the game crashes, lol
-            -- for i = 1, #_hand_cards do
-            --     clickcard(G.hand.cards[_hand_cards[i]])
-            -- end
-    
+            -- Note: Adjusted to make sure _hand_cards is not nil (or an empty array)
+            -- Some tarot/joker cards don't need cards selected in the deck to be utilised
+            if (_hand_cards ~= nil) then
+                for i = 1, #_hand_cards do
+                    clickcard(G.hand.cards[_hand_cards[i]])
+                end
+            end
+
             -- Then select the booster card to activate
             clickcard(G.pack_cards.cards[_card[1]])
             usecard(G.pack_cards.cards[_card[1]])
+
+            -- Could we possibly process both card selections in the one go?
+            -- Trying to fix the current issue that happens when you have to make two selections in a booster pack.
+            -- if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 then
+            --     clickcard(G.pack_cards.cards[_card[2]], 2)
+            --     usecard(G.pack_cards.cards[_card[2]], 2)
+            -- end
         end
-    
-        -- Note: When this is uncommented, and we skip a booster pack,
-        -- this causes the game to hang on waiting to choose booster cards,
-        -- even though the game state has moved onto choosing the next blind/boss.
-        -- -------
-        if G.GAME.pack_choices -1 > 0 and (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK or G.STATE == G.STATES.STANDARD_PACK or G.STATE == G.STATES.BUFFOON_PACK or G.STATE == G.STATES.PLANET_PACK) then
+
+        sendDebugMessage(G.GAME.pack_choices)
+        sendDebugMessage(G.STATE)
+        if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 and G.STATE == 999 then
+            sendDebugMessage("Queueing choose booster card action!")
             queueaction(function()
                 firewhenready(function()
                     return Middleware.BUTTONS.SKIP_PACK ~= nil and
@@ -266,7 +274,8 @@ function Middleware.c_choose_booster_cards()
                 end)
             end, 0.0)
         elseif G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
-                queueaction(function()
+            sendDebugMessage("Queueing blind select action!")
+            queueaction(function()
                     firewhenready(function()
                         return G.STATE_COMPLETE and G.STATE == G.STATES.BLIND_SELECT
                     end, function()
@@ -276,6 +285,7 @@ function Middleware.c_choose_booster_cards()
                 end, 0.0)
         elseif G.GAME.PACK_INTERRUPT == G.STATES.SHOP then
             queueaction(function()
+                sendDebugMessage("Queueing shop action!")
                 firewhenready(function()
                     return G.STATE_COMPLETE and G.STATE == G.STATES.SHOP
                 end, function()
@@ -284,7 +294,6 @@ function Middleware.c_choose_booster_cards()
                 end)
             end, 0.0)
         end
-        -- end
     end)
 
 end

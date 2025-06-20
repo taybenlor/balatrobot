@@ -247,15 +247,16 @@ function Middleware.c_choose_booster_cards()
                 end
             end
 
-            -- Then select the booster card to activate
-            clickcard(G.pack_cards.cards[_card[1]])
-            usecard(G.pack_cards.cards[_card[1]])
-
             -- Could we possibly process both card selections in the one go?
             -- Trying to fix the current issue that happens when you have to make two selections in a booster pack.
             if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 then
+                clickcard(G.pack_cards.cards[_card[1]])
+                usecard(G.pack_cards.cards[_card[1]])
                 clickcard(G.pack_cards.cards[_card[2]], 2)
                 usecard(G.pack_cards.cards[_card[2]], 2)
+            else 
+                clickcard(G.pack_cards.cards[_card[1]])
+                usecard(G.pack_cards.cards[_card[1]])
             end
         end
 

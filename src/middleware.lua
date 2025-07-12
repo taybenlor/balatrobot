@@ -275,7 +275,7 @@ function Middleware.c_choose_booster_cards()
             -- actually make the change
             clickcard(G.pack_cards.cards[_card[1]])
             usecard(G.pack_cards.cards[_card[1]])
-            
+
             -- if we have more choices to make, re-queue the action
             if G.GAME.pack_choices and G.GAME.pack_choices > 1 then
                 sendDebugMessage("Re-queueing choose booster card action!")
@@ -283,7 +283,10 @@ function Middleware.c_choose_booster_cards()
                     Middleware.choosingboostercards = false
                     Middleware.c_choose_booster_cards()
                 end, 0.0)
-            elseif G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
+                return
+            end
+
+            if G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
                 sendDebugMessage("Queueing blind select action!")
                 queueaction(function()
                         firewhenready(function()

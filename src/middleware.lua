@@ -220,6 +220,7 @@ end
 
 function Middleware.c_choose_booster_cards()
 
+    sendDebugMessage("Start of outer booster card function!")
     if Middleware.choosingboostercards == true then return end
     if not G.pack_cards.cards then return end
 
@@ -235,8 +236,30 @@ function Middleware.c_choose_booster_cards()
     end,
 
     function(_action, _card, _hand_cards)
+        sendDebugMessage("Start of inner booster card function!")
         if _action == Bot.ACTIONS.SKIP_BOOSTER_PACK then
             pushbutton(Middleware.BUTTONS.SKIP_PACK)
+            if G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
+                sendDebugMessage("Queueing blind select action!")
+                queueaction(function()
+                        firewhenready(function()
+                            return G.STATE_COMPLETE and G.STATE == G.STATES.BLIND_SELECT
+                        end, function()
+                            Middleware.choosingboostercards = false
+                            Middleware.c_select_blind()
+                        end)
+                    end, 0.0)
+            elseif G.GAME.PACK_INTERRUPT == G.STATES.SHOP then
+                queueaction(function()
+                    sendDebugMessage("Queueing shop action!")
+                    firewhenready(function()
+                        return G.STATE_COMPLETE and G.STATE == G.STATES.SHOP
+                    end, function()
+                        Middleware.choosingboostercards = false
+                        Middleware.c_shop()
+                    end)
+                end, 0.0)
+            end
         elseif _action == Bot.ACTIONS.SELECT_BOOSTER_CARD then
             -- Click each card from your deck first (only occurs if _pack_card is consumable)
             -- Note: Adjusted to make sure _hand_cards is not nil (or an empty array)
@@ -247,54 +270,40 @@ function Middleware.c_choose_booster_cards()
                 end
             end
 
-            -- Could we possibly process both card selections in the one go?
-            -- Trying to fix the current issue that happens when you have to make two selections in a booster pack.
-            if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 then
-                clickcard(G.pack_cards.cards[_card[1]])
-                usecard(G.pack_cards.cards[_card[1]])
-                clickcard(G.pack_cards.cards[_card[2]], 2)
-                usecard(G.pack_cards.cards[_card[2]], 2)
-            else 
-                clickcard(G.pack_cards.cards[_card[1]])
-                usecard(G.pack_cards.cards[_card[1]])
-            end
-        end
-
-        -- We dont need to re-send this event if we're trying to do it in the one go.
-        -- This is the best way I was able to solve this small bug. It'll do for now.
-        --
-        -- if G.GAME.pack_choices and G.GAME.pack_choices -1 > 0 and G.STATE == 999 then
-        --     sendDebugMessage("Queueing choose booster card action!")
-        --     queueaction(function()
-        --         firewhenready(function()
-        --             return Middleware.BUTTONS.SKIP_PACK ~= nil and
-        --             Middleware.BUTTONS.SKIP_PACK.config.button == 'skip_booster' and
-        --             Middleware.choosingboostercards == false and
-        --             G and G.pack_cards and G.pack_cards.cards
-        --         end, function()
-        --             Middleware.c_choose_booster_cards()
-        --         end)
-        --     end, 0.0)
-        if G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
-            sendDebugMessage("Queueing blind select action!")
-            queueaction(function()
+            sendDebugMessage(G.STATE)
+            sendDebugMessage(G.GAME.pack_choices)
+            -- actually make the change
+            clickcard(G.pack_cards.cards[_card[1]])
+            usecard(G.pack_cards.cards[_card[1]])
+            
+            -- if we have more choices to make, re-queue the action
+            if G.GAME.pack_choices and G.GAME.pack_choices > 1 then
+                sendDebugMessage("Re-queueing choose booster card action!")
+                queueaction(function()
+                    Middleware.choosingboostercards = false
+                    Middleware.c_choose_booster_cards()
+                end, 0.0)
+            elseif G.GAME.PACK_INTERRUPT == G.STATES.BLIND_SELECT then
+                sendDebugMessage("Queueing blind select action!")
+                queueaction(function()
+                        firewhenready(function()
+                            return G.STATE_COMPLETE and G.STATE == G.STATES.BLIND_SELECT
+                        end, function()
+                            Middleware.choosingboostercards = false
+                            Middleware.c_select_blind()
+                        end)
+                    end, 0.0)
+            elseif G.GAME.PACK_INTERRUPT == G.STATES.SHOP then
+                queueaction(function()
+                    sendDebugMessage("Queueing shop action!")
                     firewhenready(function()
-                        return G.STATE_COMPLETE and G.STATE == G.STATES.BLIND_SELECT
+                        return G.STATE_COMPLETE and G.STATE == G.STATES.SHOP
                     end, function()
                         Middleware.choosingboostercards = false
-                        Middleware.c_select_blind()
+                        Middleware.c_shop()
                     end)
                 end, 0.0)
-        elseif G.GAME.PACK_INTERRUPT == G.STATES.SHOP then
-            queueaction(function()
-                sendDebugMessage("Queueing shop action!")
-                firewhenready(function()
-                    return G.STATE_COMPLETE and G.STATE == G.STATES.SHOP
-                end, function()
-                    Middleware.choosingboostercards = false
-                    Middleware.c_shop()
-                end)
-            end, 0.0)
+            end
         end
     end)
 

@@ -78,7 +78,8 @@ function Utils.getConsumablesData()
 end
 
 function Utils.getBlindData()
-    local _blinds = { }
+    local _blinds = {}
+    _blinds.skip_tag = {}
 
     if G and G.GAME then
         _blinds.ondeck = G.GAME.blind_on_deck
@@ -90,6 +91,14 @@ function Utils.getBlindData()
 
     if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_choices and G.GAME.round_resets.blind_choices.Boss then
         _blinds.boss = G.P_BLINDS[G.GAME.round_resets.blind_choices.Boss].name
+    end
+
+    if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Small then
+        _blinds.skip_tag['Small'] = G.P_TAGS[G.GAME.round_resets.blind_tags.Small].name
+    end
+
+    if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Big then
+        _blinds.skip_tag['Big'] = G.P_TAGS[G.GAME.round_resets.blind_tags.Big].name
     end
 
     return _blinds

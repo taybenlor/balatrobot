@@ -1,16 +1,16 @@
-
-Botlogger = { }
+Botlogger = {}
 Botlogger.path = ''
 Botlogger.filename = nil
 
 function Botlogger.fileexists(filename)
-    local _f = io.open(filename, 'r')
-    if _f ~= nil then
-        io.close(_f)
-        return true
-    else
-        return false
-    end
+    -- local _f = io.open(filename, 'r')
+    -- if _f ~= nil then
+    --     io.close(_f)
+    --     return true
+    -- else
+    --     return false
+    -- end
+    return true
 end
 
 function Botlogger.getfilename(settings)
@@ -28,12 +28,12 @@ function Botlogger.getfilename(settings)
 end
 
 function Botlogger.logbotdecision(...)
-    local _args = {...}
+    local _args = { ... }
     local _action = table.remove(_args, 1)
     local _logstring = ''
-    
+
     if _action then
-        for key,v in pairs(Bot.ACTIONS) do
+        for key, v in pairs(Bot.ACTIONS) do
             if _action == v then
                 _logstring = key
                 break
@@ -41,20 +41,20 @@ function Botlogger.logbotdecision(...)
         end
 
         for i = 1, #_args do
-            _logstring = _logstring..'|'
+            _logstring = _logstring .. '|'
             if type(_args[i]) == 'table' then
                 for j = 1, #_args[i] do
-                    _logstring = _logstring..','..tostring(_args[i][j])
+                    _logstring = _logstring .. ',' .. tostring(_args[i][j])
                 end
             else
-                _logstring = _logstring..tostring(_args[i])
+                _logstring = _logstring .. tostring(_args[i])
             end
         end
 
         if Botlogger.filename then
-            local _f = io.open(Botlogger.filename, 'a')
-            _f:write(_logstring, '\n')
-            _f:close()
+            -- local _f = io.open(Botlogger.filename, 'a')
+            -- _f:write(_logstring, '\n')
+            -- _f:close()
         end
     end
 end
@@ -87,7 +87,6 @@ function Botlogger.start_run()
 end
 
 function Botlogger.init()
-
     Botlogger.q_skip_or_select_blind = List.new()
     Botlogger.q_select_cards_from_hand = List.new()
     Botlogger.q_select_shop_action = List.new()
@@ -98,28 +97,27 @@ function Botlogger.init()
     Botlogger.q_rearrange_consumables = List.new()
     Botlogger.q_rearrange_hand = List.new()
     Botlogger.q_start_run = List.new()
-    
+
     -- Hook bot functions
     if Bot.SETTINGS.replay == true or Bot.SETTINGS.api == true then
         -- Redefine Bot functions to just return the next action from their queue
         Botlogger.nextaction = 1
-        for k,v in pairs(Bot) do
+        for k, v in pairs(Bot) do
             if type(Bot[k]) == 'function' then
                 Bot[k] = function()
                     --sendDebugMessage(k)
-                    if not List.isempty(Botlogger['q_'..k]) then
-                        local _action = List.popright(Botlogger['q_'..k])
+                    if not List.isempty(Botlogger['q_' .. k]) then
+                        local _action = List.popright(Botlogger['q_' .. k])
 
                         if Bot.SETTINGS.api == false and _action[1] == Botlogger.nextaction then
                             Botlogger.nextaction = Botlogger.nextaction + 1
                             return unpack(_action[2])
-
                         elseif Bot.SETTINGS.api == false then
-                            List.pushright(Botlogger['q_'..k], _action)
+                            List.pushright(Botlogger['q_' .. k], _action)
                             return Bot.ACTIONS.PASS
 
-                        -- We don't care about action order for the API.
-                        -- When the queue is populated, return the choice.
+                            -- We don't care about action order for the API.
+                            -- When the queue is populated, return the choice.
                         elseif Bot.SETTINGS.api == true then
                             return unpack(_action[2])
                         end
@@ -132,7 +130,7 @@ function Botlogger.init()
                     end
                 end
             end
-        end 
+        end
     end
 
     -- Read replay file and populate action queues
@@ -140,22 +138,21 @@ function Botlogger.init()
         local _replayfile = Botlogger.getfilename(Bot.SETTINGS)
 
         if Botlogger.fileexists(_replayfile) then
-
             local _num_action = 0
             for line in io.lines(_replayfile) do
                 _num_action = _num_action + 1
-                
+
                 local _action = Utils.parseaction(line)
                 sendDebugMessage(line)
                 local _params = Bot.ACTIONPARAMS[_action[1]]
                 for i = 2, #_action do
                     sendDebugMessage(tostring(_action[i][1]))
                 end
-                List.pushleft(Botlogger['q_'.._params.func], { _num_action, _action })
-            end           
+                List.pushleft(Botlogger['q_' .. _params.func], { _num_action, _action })
+            end
         end
     elseif Bot.SETTINGS.replay == false then
-        for k,v in pairs(Bot) do
+        for k, v in pairs(Bot) do
             if type(Bot[k]) == 'function' then
                 Bot[k] = Hook.addcallback(Bot[k], Botlogger.logbotdecision)
             end

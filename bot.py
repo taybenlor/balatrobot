@@ -62,7 +62,7 @@ class Bot:
         stake: int = 1,
         seed: str = None,
         challenge: str = None,
-        bot_port: int = 12346,
+        bot_port: int = 12347,
     ):
         self.G = None
         self.deck = deck
@@ -135,10 +135,10 @@ class Bot:
 
     def start_balatro_instance(self):
         balatro_exec_path = (
-            r"E:\SteamLibrary\steamapps\common\Balatro\Balatro.exe"
+            r"/Users/rhyswalsh/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app"
         )
         self.balatro_instance = subprocess.Popen(
-            [balatro_exec_path, str(self.bot_port)]
+            ["/usr/bin/open", balatro_exec_path, "12347"]
         )
 
     def stop_balatro_instance(self):
@@ -226,15 +226,15 @@ class Bot:
 
             self.running = True
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.settimeout(1)
-            self.sock.connect(self.addr)
+            self.sock.settimeout(5)
+            # self.sock.connect(self.addr)
 
         if self.running:
             self.sendcmd("HELLO")
 
             jsondata = {}
             try:
-                data = self.sock.recv(65536)
+                data, _ = self.sock.recvfrom(65536)
                 jsondata = json.loads(data)
 
                 if "response" in jsondata:
@@ -254,9 +254,33 @@ class Bot:
                 print("Socket error, reconnecting...")
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.sock.settimeout(1)
-                self.sock.connect(self.addr)
+                #  self.sock.connect(self.addr)
 
     def run(self):
-        while self.running:
-            self.run_step()
-            time.sleep(1)
+        while True:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(5)
+                msg = bytes("HELLO", "utf-8")
+                s.sendto(msg, self.addr)
+                try:
+                    time.sleep(1)
+                    data, _ = s.recvfrom(65536)
+                    jsondata = json.loads(data)
+                    if "response" in jsondata:
+                        print(jsondata["response"])
+                    else:
+                        self.G = jsondata
+                        if self.G["waitingForAction"]:
+                            cache_state(self.G["waitingFor"], self.G)
+                            action = self.chooseaction()
+                            if action == None:
+                                raise ValueError("All actions must return a value!")
+
+                            cmdstr = self.actionToCmd(action)
+                            msg = bytes(cmdstr, "utf-8")
+                            time.sleep(1)
+                            s.sendto(msg, self.addr)
+                except socket.error as e:
+                    print(e)
+                    print("Socket error, reconnecting...")
+                    s.close()

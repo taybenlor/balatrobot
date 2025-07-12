@@ -1,9 +1,8 @@
-
 local socket = require "socket"
 
 local data, msg_or_ip, port_or_nil
 
-BalatrobotAPI = { }
+BalatrobotAPI = {}
 BalatrobotAPI.socket = nil
 
 BalatrobotAPI.waitingFor = nil
@@ -13,7 +12,7 @@ function BalatrobotAPI.notifyapiclient()
     -- TODO Generate gamestate json object
     local _gamestate = Utils.getGamestate()
     _gamestate.waitingFor = BalatrobotAPI.waitingFor
-    sendDebugMessage('WaitingFor '..tostring(BalatrobotAPI.waitingFor))
+    sendDebugMessage('WaitingFor ' .. tostring(BalatrobotAPI.waitingFor))
     _gamestate.waitingForAction = BalatrobotAPI.waitingFor ~= nil and BalatrobotAPI.waitingForAction or false
     local _gamestateJsonString = json.encode(_gamestate)
 
@@ -26,7 +25,7 @@ end
 function BalatrobotAPI.respond(str)
     sendDebugMessage('respond')
     if BalatrobotAPI.socket and port_or_nil ~= nil then
-        response = { }
+        response = {}
         response.response = str
         str = json.encode(response)
         BalatrobotAPI.socket:sendto(string.format("%s\n", str), msg_or_ip, port_or_nil)
@@ -35,7 +34,7 @@ end
 
 function BalatrobotAPI.queueaction(action)
     local _params = Bot.ACTIONPARAMS[action[1]]
-    List.pushleft(Botlogger['q_'.._params.func], { 0, action })
+    List.pushleft(Botlogger['q_' .. _params.func], { 0, action })
 end
 
 function BalatrobotAPI.update(dt)
@@ -44,11 +43,11 @@ function BalatrobotAPI.update(dt)
         BalatrobotAPI.socket = socket.udp()
         BalatrobotAPI.socket:settimeout(0)
         local port = arg[1] or BALATRO_BOT_CONFIG.port
-        BalatrobotAPI.socket:setsockname('127.0.0.1', tonumber(port))
+        BalatrobotAPI.socket:setsockname('127.0.0.1', tonumber('12347'))
     end
 
     data, msg_or_ip, port_or_nil = BalatrobotAPI.socket:receivefrom()
-	if data then
+    if data then
         if data == 'HELLO\n' or data == 'HELLO' then
             BalatrobotAPI.notifyapiclient()
         else
@@ -66,14 +65,13 @@ function BalatrobotAPI.update(dt)
                 BalatrobotAPI.queueaction(_action)
             end
         end
+    elseif msg_or_ip ~= 'timeout' then
+        sendDebugMessage("Unknown network error: " .. tostring(msg))
+    end
 
-	elseif msg_or_ip ~= 'timeout' then
-		sendDebugMessage("Unknown network error: "..tostring(msg))
-	end
-	
     -- No idea if this is necessary
     -- Without this being commented out, FPS capped out at ~80 for me
-	-- socket.sleep(0.01)
+    -- socket.sleep(0.01)
 end
 
 function BalatrobotAPI.init()
@@ -128,7 +126,7 @@ function BalatrobotAPI.init()
             original_present()
         end
     end
-    
+
     sendDebugMessage('init api')
     if Bot.SETTINGS.api == true then
         Middleware.c_play_hand = Hook.addbreakpoint(Middleware.c_play_hand, function()

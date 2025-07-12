@@ -29,7 +29,7 @@ def select_cards_from_hand(self, G):
     # - Check hand for number of each suit
     # - Based on suit number, is there a flush we can play?
     #     - If yes, play the flush
-    #     - If no, continue 
+    #     - If no, continue
     # - Check deck for number of each suit left available
     # - Discard lowest frequency suits (up to 5 cards)
 
@@ -74,7 +74,7 @@ def select_cards_from_hand(self, G):
             Actions.PLAY_HAND,
             play_hand
         ]
-    
+
     # Okay, we can't play a flush or better, maybe we should try to discard instead!
     # Let's just firstly figure out what we should discard first.
     suit_count = hand.suit_check()
@@ -123,7 +123,7 @@ def select_cards_from_hand(self, G):
         print("Playing an alternative hand: {}".format(play_hand))
         return [Actions.PLAY_HAND, play_hand]
     else:
-        # We legitimately 
+        # We legitimately
         print("No discards available. Going to play discardable hand: {}".format(discard_hand))
         return [Actions.PLAY_HAND, discard_hand]
 
@@ -213,7 +213,7 @@ def select_shop_action(self, G):
         affordable = cost < current_dollars
         if label in self.prioritization_config['priority_vouchers'] and affordable:
             return [Actions.BUY_VOUCHER, [index + 1]]
-        
+
     if (G["shop"]["reroll_cost"] * 2 < current_dollars) or G["shop"]["reroll_cost"] == 0:
         # We have enough money to do a re-roll
         # Let's see if we can get anything better
@@ -252,8 +252,8 @@ def select_booster_action(self, G):
             return [Actions.SELECT_BOOSTER_CARD, maybe_indexes, []]
         else:
             # passing through hand indexes, just in case
-            return [Actions.SELECT_BOOSTER_CARD, [1, 2], [1, 2, 3]]
-    
+            return [Actions.SELECT_BOOSTER_CARD, [1, 2], [1, 2]]
+
     if G['pack_cards'][0]['ability']['set'] == "Joker" and len(G['jokers']) < 5:
         maybe_indexes = []
         for index, joker in enumerate(G['pack_cards']):
@@ -300,7 +300,7 @@ def sell_jokers(self, G):
     # Until I can work out how to trigger this while in the shop, its not worth using.
     # We shouldn't sell jokers at the beginning of choosing a hand.
     # -----
-    # main_jokers = self.prioritization_config['flush_priority_jokers'] + self.prioritization_config['multi_based_jokers'] + self.prioritization_config['chip_based_jokers'] + self.prioritization_config['other_jokers'] 
+    # main_jokers = self.prioritization_config['flush_priority_jokers'] + self.prioritization_config['multi_based_jokers'] + self.prioritization_config['chip_based_jokers'] + self.prioritization_config['other_jokers']
     # for index, joker in enumerate(G['jokers']):
     #     label = joker["label"]
     #     if label not in main_jokers:
@@ -350,7 +350,7 @@ if __name__ == "__main__":
         stake=1,
         seed=None,
         challenge=None,
-        bot_port=12345
+        bot_port=12347
     )
 
     mybot.skip_or_select_blind = skip_or_select_blind
@@ -363,8 +363,8 @@ if __name__ == "__main__":
     mybot.rearrange_consumables = rearrange_consumables
     mybot.rearrange_hand = rearrange_hand
 
-    mybot.start_balatro_instance()
-    time.sleep(20)
+    # mybot.start_balatro_instance()
+    time.sleep(5)
 
     mybot.run_step()
     mybot.run()

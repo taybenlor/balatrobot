@@ -88,6 +88,10 @@ function Utils.getBlindData()
         _blinds.name = G.GAME.blind.name
     end
 
+    if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_choices and G.GAME.round_resets.blind_choices.Boss then
+        _blinds.boss = G.P_BLINDS[G.GAME.round_resets.blind_choices.Boss].name
+    end
+
     return _blinds
 end
 

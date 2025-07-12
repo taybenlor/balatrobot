@@ -278,6 +278,7 @@ class Bot:
 
                             cmdstr = self.actionToCmd(action)
                             msg = bytes(cmdstr, "utf-8")
+                            time.sleep(1)
                             s.sendto(msg, self.addr)
                 except socket.error as e:
                     print(e)

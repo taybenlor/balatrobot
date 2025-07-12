@@ -364,7 +364,7 @@ if __name__ == "__main__":
     mybot.rearrange_hand = rearrange_hand
 
     # mybot.start_balatro_instance()
-    # time.sleep(20)
+    time.sleep(5)
 
     mybot.run_step()
     mybot.run()

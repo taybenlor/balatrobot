@@ -173,7 +173,7 @@ function Utils.getGameData()
         _game.interest_cap = G.GAME.interest_cap
         _game.inflation = G.GAME.inflation
         _game.dollars = G.GAME.dollars
-        _game.max_jokers = G.GAME.max_jokers
+        -- _game.max_jokers = G.GAME.max_jokers
         _game.bankrupt_at = G.GAME.bankrupt_at
         _game.chips = _game.chips
     end

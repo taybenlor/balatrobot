@@ -9,6 +9,8 @@ from gamestates import cache_state
 import subprocess
 import random
 
+from collections.abc import Iterable
+
 
 class State(Enum):
     SELECTING_HAND = 1
@@ -82,18 +84,68 @@ class Bot:
 
         self.prioritization_config = {
             # joker pirorities
-            'flush_priority_jokers': [],
-            'multi_based_jokers': ['Cavendish','Gros Michel','Misprint','Joker','Greedy Joker','Lusty Joker','Wrathful Joker','Gluttonous Joker','Droll Joker','Photograph','Popcorn','Smiley Face','Joker Stencil','Loyalty Card','Fibonacci','Card Sharp','Ramen','Baseball Card','Raised Fist', 'Abstract Joker', 'Even Steven', 'Supernova'],
-            'chip_based_jokers': ['Crafty Joker', 'Hiker', 'Banner', 'Odd Todd', 'Scary Face', 'Ice Cream', 'Blue Joker'],
-            'other_jokers': ['Four Fingers', 'Turtle Bean', 'Mr. Bones'],
+            "flush_priority_jokers": [],
+            "multi_based_jokers": [
+                "Cavendish",
+                "Gros Michel",
+                "Misprint",
+                "Joker",
+                "Greedy Joker",
+                "Lusty Joker",
+                "Wrathful Joker",
+                "Gluttonous Joker",
+                "Droll Joker",
+                "Photograph",
+                "Popcorn",
+                "Smiley Face",
+                "Joker Stencil",
+                "Loyalty Card",
+                "Fibonacci",
+                "Card Sharp",
+                "Ramen",
+                "Baseball Card",
+                "Raised Fist",
+                "Abstract Joker",
+                "Even Steven",
+                "Supernova",
+            ],
+            "chip_based_jokers": [
+                "Crafty Joker",
+                "Hiker",
+                "Banner",
+                "Odd Todd",
+                "Scary Face",
+                "Ice Cream",
+                "Blue Joker",
+            ],
+            "other_jokers": ["Four Fingers", "Turtle Bean", "Mr. Bones"],
             # planet card priorities
-            'priority_planet_cards': ["Jupiter", "Neptune"],
+            "priority_planet_cards": ["Jupiter", "Neptune"],
             # tarot card priotities
-            'priority_tarot_cards': ["Black Hole", "The High Priestess", "The Hermit", "The Wheel of Fortune", "Temperance", "Judgement"],
+            "priority_tarot_cards": [
+                "Black Hole",
+                "The High Priestess",
+                "The Hermit",
+                "The Wheel of Fortune",
+                "Temperance",
+                "Judgement",
+            ],
             # voucher priorities
-            'priority_vouchers': ['Clearance Sale', 'Grabber', 'Wasteful', 'Paint Brush'],
+            "priority_vouchers": [
+                "Clearance Sale",
+                "Grabber",
+                "Wasteful",
+                "Paint Brush",
+            ],
             # spectral priorities
-            'priority_spectral_cards': ["Familiar", "Grim", "Incantation", "Sigil", "The Soul", "Black Hole"]
+            "priority_spectral_cards": [
+                "Familiar",
+                "Grim",
+                "Incantation",
+                "Sigil",
+                "The Soul",
+                "Black Hole",
+            ],
         }
 
     def skip_or_select_blind(self):
@@ -134,9 +186,7 @@ class Bot:
         raise NotImplementedError("Error: Bot.rearrange_hand must be implemented.")
 
     def start_balatro_instance(self):
-        balatro_exec_path = (
-            r"/Users/rhyswalsh/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app"
-        )
+        balatro_exec_path = r"/Users/rhyswalsh/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app"
         self.balatro_instance = subprocess.Popen(
             ["/usr/bin/open", balatro_exec_path, "12347"]
         )
@@ -155,7 +205,9 @@ class Bot:
         for x in action:
             if isinstance(x, Actions):
                 result.append(x.name)
-            elif type(x) is list:
+            elif isinstance(x, str):
+                result.append(x)
+            elif isinstance(x, Iterable):
                 result.append(",".join([str(y) for y in x]))
             else:
                 result.append(str(x))
@@ -200,23 +252,23 @@ class Bot:
                     self.challenge,
                 ]
             case "skip_or_select_blind":
-                return self.skip_or_select_blind(self, self.G)
+                return self.skip_or_select_blind()
             case "select_cards_from_hand":
-                return self.select_cards_from_hand(self, self.G)
+                return self.select_cards_from_hand()
             case "select_shop_action":
-                return self.select_shop_action(self, self.G)
+                return self.select_shop_action()
             case "select_booster_action":
-                return self.select_booster_action(self, self.G)
+                return self.select_booster_action()
             case "sell_jokers":
-                return self.sell_jokers(self, self.G)
+                return self.sell_jokers()
             case "rearrange_jokers":
-                return self.rearrange_jokers(self, self.G)
+                return self.rearrange_jokers()
             case "use_or_sell_consumables":
-                return self.use_or_sell_consumables(self, self.G)
+                return self.use_or_sell_consumables()
             case "rearrange_consumables":
-                return self.rearrange_consumables(self, self.G)
+                return self.rearrange_consumables()
             case "rearrange_hand":
-                return self.rearrange_hand(self, self.G)
+                return self.rearrange_hand()
 
     def run_step(self):
         if self.sock is None:
@@ -263,7 +315,7 @@ class Bot:
                 msg = bytes("HELLO", "utf-8")
                 s.sendto(msg, self.addr)
                 try:
-                    time.sleep(1)
+                    time.sleep(0.1)
                     data, _ = s.recvfrom(65536)
                     jsondata = json.loads(data)
                     if "response" in jsondata:
@@ -278,7 +330,7 @@ class Bot:
 
                             cmdstr = self.actionToCmd(action)
                             msg = bytes(cmdstr, "utf-8")
-                            time.sleep(1)
+                            time.sleep(0.1)
                             s.sendto(msg, self.addr)
                 except socket.error as e:
                     print(e)

@@ -1,8 +1,7 @@
-
-Utils = { }
+Utils = {}
 
 function Utils.getCardData(card)
-    local _card = { }
+    local _card = {}
 
     _card.label = card.label
     _card.cost = card.cost
@@ -20,13 +19,25 @@ function Utils.getCardData(card)
 end
 
 function Utils.getDeckData()
-    local _deck = { }
+    local _deck = {}
+
+    if G and G.deck and G.deck.cards then
+        for i = 1, #G.deck.cards, 1 do
+            local _card = {}
+            _card.label = G.deck.cards[i].label
+            _card.name = G.deck.cards[i].config.card.name
+            _card.suit = G.deck.cards[i].config.card.suit
+            _card.value = G.deck.cards[i].config.card.value
+            _card.card_key = G.deck.cards[i].config.card.card_key
+            _deck[i] = _card
+        end
+    end
 
     return _deck
 end
 
 function Utils.getHandData()
-    local _hand = { }
+    local _hand = {}
 
     if G and G.hand and G.hand.cards then
         for i = 1, #G.hand.cards do
@@ -39,7 +50,7 @@ function Utils.getHandData()
 end
 
 function Utils.getPackCardsData()
-    local _pack = { }
+    local _pack = {}
 
     if G and G.pack_cards and G.pack_cards.cards then
         for i = 1, #G.pack_cards.cards do
@@ -52,7 +63,7 @@ function Utils.getPackCardsData()
 end
 
 function Utils.getJokersData()
-    local _jokers = { }
+    local _jokers = {}
 
     if G and G.jokers and G.jokers.cards then
         for i = 1, #G.jokers.cards do
@@ -65,11 +76,11 @@ function Utils.getJokersData()
 end
 
 function Utils.getConsumablesData()
-    local _consumables = { }
+    local _consumables = {}
 
-    if G and G.consumables and G.consumables.cards then
-        for i = 1, #G.consumeables.cards do
-            local _card = Utils.getCardData(G.consumeables.cards[i])
+    if G and G.GAME.consumables and G.GAME.consumables.cards then
+        for i = 1, #G.GAME.consumeables.cards do
+            local _card = Utils.getCardData(G.GAME.consumeables.cards[i])
             _consumables[i] = _card
         end
     end
@@ -78,7 +89,8 @@ function Utils.getConsumablesData()
 end
 
 function Utils.getBlindData()
-    local _blinds = { }
+    local _blinds = {}
+    _blinds.skip_tag = {}
 
     if G and G.GAME then
         _blinds.ondeck = G.GAME.blind_on_deck
@@ -92,30 +104,38 @@ function Utils.getBlindData()
         _blinds.boss = G.P_BLINDS[G.GAME.round_resets.blind_choices.Boss].name
     end
 
+    if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Small then
+        _blinds.skip_tag['Small'] = G.P_TAGS[G.GAME.round_resets.blind_tags.Small].name
+    end
+
+    if G and G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Big then
+        _blinds.skip_tag['Big'] = G.P_TAGS[G.GAME.round_resets.blind_tags.Big].name
+    end
+
     return _blinds
 end
 
 function Utils.getAnteData()
-    local _ante = { }
+    local _ante = {}
     _ante.blinds = Utils.getBlindData()
 
     return _ante
 end
 
 function Utils.getBackData()
-    local _back = { }
+    local _back = {}
 
     return _back
 end
 
 function Utils.getShopData()
-    local _shop = { }
+    local _shop = {}
     if not G or not G.shop then return _shop end
-    
+
     _shop.reroll_cost = G.GAME.current_round.reroll_cost
-    _shop.cards = { }
-    _shop.boosters = { }
-    _shop.vouchers = { }
+    _shop.cards = {}
+    _shop.boosters = {}
+    _shop.vouchers = {}
 
     for i = 1, #G.shop_jokers.cards do
         _shop.cards[i] = Utils.getCardData(G.shop_jokers.cards[i])
@@ -133,13 +153,13 @@ function Utils.getShopData()
 end
 
 function Utils.getHandScoreData()
-    local _handscores = { }
+    local _handscores = {}
 
     return _handscores
 end
 
 function Utils.getTagsData()
-    local _tags = { }
+    local _tags = {}
 
     if G and G.GAME.tags then
         for i = 1, #G.GAME.tags do
@@ -152,17 +172,23 @@ function Utils.getTagsData()
 end
 
 function Utils.getRoundData()
-    local _current_round = { }
+    local _current_round = {}
 
     if G and G.GAME and G.GAME.current_round then
         _current_round.discards_left = G.GAME.current_round.discards_left
+        _current_round.hands_left = G.GAME.current_round.hands_left
+
+        -- Extract blind chip requirement
+        if G.GAME.blind and G.GAME.blind.chips then
+            _current_round.dollars_to_be_earned = G.GAME.blind.chips
+        end
     end
 
     return _current_round
 end
 
 function Utils.getGameData()
-    local _game = { }
+    local _game = {}
 
     if G and G.STATE then
         _game.state = G.STATE
@@ -182,7 +208,7 @@ function Utils.getGameData()
 end
 
 function Utils.getTag(tag)
-    local _tag = { }
+    local _tag = {}
 
     _tag.name = tag.name
 
@@ -191,12 +217,12 @@ end
 
 function Utils.getGamestate()
     -- TODO
-    local _gamestate = { }
+    local _gamestate = {}
 
     _gamestate = Utils.getGameData()
-    
+
     _gamestate.deckback = Utils.getBackData()
-    _gamestate.deck = Utils.getDeckData() -- Ensure this is not ordered
+    _gamestate.deck = Utils.getDeckData()
     _gamestate.hand = Utils.getHandData()
     _gamestate.jokers = Utils.getJokersData()
     _gamestate.consumables = Utils.getConsumablesData()
@@ -222,13 +248,13 @@ function Utils.parseaction(data)
             return nil
         end
 
-        local _actiontable = { }
+        local _actiontable = {}
         _actiontable[1] = _action
 
         if params then
             local _i = 2
             for _arg in params:gmatch("[%w%s,]+") do
-                local _splitstring = { }
+                local _splitstring = {}
                 local _j = 1
                 for _str in _arg:gmatch('([^,]+)') do
                     _splitstring[_j] = tonumber(_str) or _str
@@ -267,7 +293,7 @@ end
 function Utils.isTableUnique(table)
     if table == nil then return true end
 
-    local _seen = { }
+    local _seen = {}
     for i = 1, #table do
         if _seen[table[i]] then return false end
         _seen[table[i]] = table[i]

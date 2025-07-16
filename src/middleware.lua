@@ -393,17 +393,17 @@ function Middleware.c_shop()
             pushbutton(Middleware.BUTTONS.REROLL)
         elseif _action == Bot.ACTIONS.BUY_CARD then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]], 1)
+            usecard(G.shop_jokers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_VOUCHER then
             clickcard(G.shop_vouchers.cards[_card[1]])
-            usecard(G.shop_vouchers.cards[_card[1]], 1)
+            usecard(G.shop_vouchers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_BOOSTER then
             _done_shopping = true
             clickcard(G.shop_booster.cards[_card[1]])
-            usecard(G.shop_booster.cards[_card[1]], 1)
+            usecard(G.shop_booster.cards[_card[1]])
         elseif _action == Bot.ACTIONS.SELL_JOKER then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]], 1)
+            usecard(G.shop_jokers.cards[_card[1]])
         end
 
         if not _done_shopping then

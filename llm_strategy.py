@@ -15,6 +15,8 @@ from typing import Any, List, Literal, Optional, Tuple, TypeVar, Union
 
 from typing import TypedDict
 
+from jokers import jokers_dict
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -60,13 +62,237 @@ class Card(TypedDict):
     name: str
     debuff: str
     card_key: str
+    cost: int
+    ability: Any
+
+
+class Tag(TypedDict):
+    name: str
+
+
+class Blinds(TypedDict):
+    ondeck: str
+    boss: str
+    name: str
+    skip_tag: dict[str, str]
+
+
+class Ante(TypedDict):
+    blinds: Blinds
+
+
+class Round(TypedDict):
+    dollars_to_be_earned: int
+    hands_left: int
+    discards_left: int
+
+
+class Joker(TypedDict):
+    label: str
+    cost: int
+    debuff: bool
+
+
+class Voucher(TypedDict):
+    label: str
+    cost: int
+    debuff: bool
+
+
+class Shop(TypedDict):
+    reroll_cost: int
+    boosters: List[Card]
+    cards: List[Joker]
+    vouchers: List[Voucher]
 
 
 class GameState(TypedDict):
     state: State
+    waitingFor: str
+    waitingForAction: bool
+    bankrupt_at: int
+    dollars: int
+    chips: int
+    current_round: Round
+    round: int
+    num_hands_played: int
+    inflation: int
+    state: int
+    discount_percent: int
+    interest_cap: int
     hand: List[Card]
-    jokers: List[Any]
-    consumables: List[Any]
+    deck: List[Card]
+    tags: List[Any]
+    jokers: List[Joker]
+    consumables: List[Card]
+    shop: Union[Shop, None]
+    pack_cards: List[Card]
+
+
+def game_state_to_prompt(gamestate: GameState) -> str:
+    """Convert the game state to a string representation for LLM prompts."""
+    output_str = ""
+    if gamestate.get("waitingFor", None) == "select_shop_action":
+        output_str += shop_state_to_prompt(gamestate)
+    elif gamestate.get("waitingFor", None) == "select_booster_action":
+        output_str += booster_pack_to_prompt(gamestate)
+    elif gamestate.get("waitingFor", None) == "select_cards_from_hand":
+        output_str += select_cards_to_prompt(gamestate)
+    elif gamestate.get("waitingFor", None) == "skip_or_select_blind":
+        output_str += blind_to_prompt(gamestate)
+    elif gamestate.get("waitingFor", None) == "use_or_sell_consumables":
+        output_str += consumables_to_prompt(gamestate)
+    output_str += current_deck_to_prompt(gamestate)
+    return output_str
+
+
+def shop_state_to_prompt(gamestate: GameState) -> str:
+    """Convert the shop state to a string representation for LLM prompts."""
+    shop = gamestate.get("shop", {})
+    if not shop:
+        return "No shop data available."
+
+    shop_str = "You are in the Shop.\n"
+    shop_str += f"Current Dollars: {gamestate.get('dollars', 0)}\n"
+    shop_str += f"Current Discount Percent: {gamestate.get('discount_percent', 0)}%\n"
+    shop_str += f"Reroll Cost: {shop.get('reroll_cost', 0)}\n"
+    shop_str += "You can buy Boosters:\n"
+    for i, booster in enumerate(shop.get("boosters", [])):
+        shop_str += f"- {booster['label']} (Cost: {booster['cost']}, index: {i})\n"
+    else:
+        shop_str += "No boosters available.\n"
+    shop_str += "You can buy Jokers:\n"
+    for i, joker in enumerate(shop.get("cards", [])):
+        shop_str += f"- {joker['label']} (Description: {jokers_dict[joker['label']]}, Cost: {joker['cost']}, index: {i})\n"
+    else:
+        shop_str += "No jokers available.\n"
+    shop_str += "You can buy Vouchers:\n"
+    for i, voucher in enumerate(shop.get("vouchers", [])):
+        shop_str += f"- {voucher['label']} (Cost: {voucher['cost']}, index: {i})\n"
+    else:
+        shop_str += "No vouchers available.\n"
+
+    jokers = gamestate.get("jokers", [])
+    shop_str += f"You have {len(jokers)} out of the default 5 maximum.\n You have the following jokers:\n"
+    for i, joker in enumerate(jokers):
+        shop_str += f"- {joker['label']} (Description: {jokers_dict[joker['label']]})\n"
+    else:
+        shop_str += "You have no jokers.\n"
+
+    shop_str += f"You have {len(gamestate.get('consumables', []))} out of the default 2 maximum.\n"
+    shop_str += "You already have the following consumables:\n"
+    for i, consumable in enumerate(gamestate.get("consumables", [])):
+        shop_str += f"- {consumable['label']}\n"
+    else:
+        shop_str += "You have no consumables.\n"
+
+    return shop_str
+
+
+def current_deck_to_prompt(gamestate: GameState) -> str:
+    """Convert the current deck to a string representation for LLM prompts."""
+    deck = gamestate.get("deck", [])
+    if not deck:
+        return "No cards in the current deck."
+
+    deck_str = "Your current deck:\n"
+    for card in deck:
+        deck_str += f"- {card['name']}\n"
+
+    return deck_str
+
+
+def booster_pack_to_prompt(gamestate: GameState) -> str:
+    """Convert the booster pack to a string representation for LLM prompts."""
+    boosters = gamestate.get("pack_cards", [])
+    if not boosters:
+        return "No cards in the booster pack."
+
+    booster_str = "Booster Pack:\n"
+    for i, card in enumerate(boosters):
+        booster_str += f"- {card.get('name', '')} {card.get('label', '')} (index: {i}, Ability: `{json.dumps(card['ability'])}`)\n"
+
+    if gamestate.get("hand"):
+        booster_str += "Your Hand:\n"
+        for i, card in enumerate(gamestate.get("hand", [])):
+            booster_str += f"- {card['name']} (index: {i})\n"
+
+    return booster_str
+
+
+def select_cards_to_prompt(gamestate: GameState) -> str:
+    """Convert the current hand to a string representation for LLM prompts."""
+    return_str = "You are selecting cards from your hand.\n"
+
+    current_round = gamestate.get("current_round", {})
+    return_str += f"Your score is: {gamestate.get('chips', 0)}\n"
+    return_str += f"Score at least: {current_round.get('dollars_to_be_earned', 0)}\n"
+    return_str += f"Hands left: {current_round.get('hands_left', 0)}\n"
+    return_str += f"Discards left: {current_round.get('discards_left', 0)}\n"
+
+    jokers = gamestate.get("jokers", [])
+    return_str += "Your Jokers are:\n"
+    for i, card in enumerate(jokers):
+        return_str += f"- {card['label']} (Description: {jokers_dict[card['label']]})\n"
+    else:
+        return_str += "You have no jokers.\n"
+
+    tags = gamestate.get("tags", [])
+    return_str += "Your Tags are:\n"
+    for i, tag in enumerate(tags):
+        return_str += f"- {tag['name']}\n"
+    else:
+        return_str += "You have no tags.\n"
+
+    hand = gamestate.get("hand", [])
+    return_str += "Your Hand is:\n"
+    for i, card in enumerate(hand):
+        return_str += f"- {card['name']} (index: {i})\n"
+
+    return return_str
+
+
+def blind_to_prompt(gamestate: GameState) -> str:
+    """Convert the blind state to a string representation for LLM prompts."""
+    blinds = gamestate.get("ante", {}).get("blinds", {})
+    if not blinds:
+        return "No blind data available."
+
+    blind_str = f"You are deciding whether to skip or select the {blinds.get('ondeck', 'None')} blind.\n"
+    blind_str += f"Boss Blind: {blinds.get('boss', 'None')}\n"
+    blind_str += f"Tags for skipping: `{json.dumps(blinds.get('skip_tag', {}))}`\n"
+    blind_str += f"Round: {gamestate.get('round', 0)}\n"
+    blind_str += f"Current Dollars: {gamestate.get('dollars', 0)}\n"
+    blind_str += f"Inflation: {gamestate.get('inflation', 0)}%\n"
+
+    jokers = gamestate.get("jokers", [])
+    shop_str += f"You have {len(jokers)} out of the default 5 maximum.\n You have the following jokers:\n"
+    for i, joker in enumerate(jokers):
+        shop_str += f"- {joker['label']} (Description: {jokers_dict[joker['label']]})\n"
+    else:
+        shop_str += "You have no jokers.\n"
+
+    shop_str += f"You have {len(gamestate.get('consumables', []))} out of the default 2 maximum.\n"
+    shop_str += "You already have the following consumables:\n"
+    for i, consumable in enumerate(gamestate.get("consumables", [])):
+        shop_str += f"- {consumable['label']}\n"
+    else:
+        shop_str += "You have no consumables.\n"
+
+    return blind_str
+
+
+def consumables_to_prompt(gamestate: GameState) -> str:
+    """Convert the consumables state to a string representation for LLM prompts."""
+    consumables = gamestate.get("consumables", [])
+    if not consumables:
+        return "No consumables available."
+
+    consumables_str = "Your consumables:\n"
+    for i, consumable in enumerate(consumables):
+        consumables_str += f"- {consumable['label']} (index: {i})\n"
+
+    return consumables_str
 
 
 # Skip or Select Blind Actions
@@ -82,7 +308,7 @@ class SkipOrSelectBlindModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -98,15 +324,15 @@ class SelectCardsFromHandModel(BaseModel):
     """Action to either play or discard cards from hand."""
 
     action: Union[Literal["PLAY_HAND"], Literal["DISCARD_HAND"]] = Field(
-        description="Choose to either play cards from hand, or discard them"
+        description="Choose to either play selected cards from your hand, or discard selected cards from your hand."
     )
     indices: List[int] = Field(
         min_length=1,
-        description="List of indices of cards to play or discard from hand",
+        description="Array of indices of cards in hand",
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -114,12 +340,14 @@ class SelectCardsFromHandModel(BaseModel):
 BuyVoucherAction = Tuple[Actions.BUY_VOUCHER, List[int]]
 BuyCardAction = Tuple[Actions.BUY_CARD, List[int]]
 BuyBoosterAction = Tuple[Actions.BUY_BOOSTER, List[int]]
+SellJokerAction = Tuple[Actions.SELL_JOKER, List[int]]
 RerollShopAction = Tuple[Actions.REROLL_SHOP]
 EndShopAction = Tuple[Actions.END_SHOP]
 ShopAction = (
     BuyVoucherAction
     | BuyCardAction
     | BuyBoosterAction
+    | SellJokerAction
     | RerollShopAction
     | EndShopAction
 )
@@ -133,18 +361,18 @@ class ShopActionModel(BaseModel):
         Literal["BUY_CARD"],
         Literal["BUY_BOOSTER"],
         Literal["REROLL_SHOP"],
+        Literal["SELL_JOKER"],
         Literal["END_SHOP"],
     ] = Field(
         description="Choose to either buy a voucher, buy a joker, buy a booster, reroll the shop, or end the shop phase"
     )
-    indices: Optional[List[int]] = Field(
+    index: Optional[int] = Field(
         default=None,
-        max_length=1,
-        description="List of indices of cards, boosters, or vouchers to purchase (maximum of one)",
+        description="Index of the item to buy or sell in the shop. If not applicable, this can be omitted.",
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -170,24 +398,7 @@ class BoosterActionModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
-    )
-
-
-# Sell Joker Actions
-SellJokerAction = Tuple[Actions.SELL_JOKER, List[int]]
-
-
-class SellJokerModel(BaseModel):
-    """Action to sell jokers from hand."""
-
-    action: Literal["SELL_JOKER"] = Field(description="Choose to sell jokers from hand")
-    indices: List[int] = Field(
-        description="List of indices of jokers to sell from hand, return an empty list to skip selling jokers",
-    )
-    reasoning: Optional[str] = Field(
-        default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -206,7 +417,7 @@ class RearrangeJokersModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -227,7 +438,7 @@ class UseOrSellConsumablesModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -246,7 +457,7 @@ class RearrangeConsumablesModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -265,7 +476,7 @@ class RearrangeHandModel(BaseModel):
     )
     reasoning: Optional[str] = Field(
         default=None,
-        description="Optional reasoning for the decision",
+        description="Reasoning for the decision",
     )
 
 
@@ -278,9 +489,12 @@ class RearrangeHandModel(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 SYSTEM_PROMPT = """
-You are a strategic card game bot, you are playing the game Balatro.
+You are a mega genius Balatro player who can think strategically and creatively.
+You are excellent at analyzing game states and making decisions based on the current situation.
+You are a master of the Balatro game and understand all the rules, strategies, and nuances.
+You can calculate the exact score of any hand you want to play based on the rules of Balatro.
 
-Your task is to analyze the game state and make decisions based on the current situation.
+Your task is to play Balatro, analyze the game state and make decisions based on the current situation.
 Describe your reasoning for each decision you make. You can leave notes for yourself in the reasoning field.
 
 You will receive the current game state and must respond in JSON format that matches the provided schema.
@@ -347,24 +561,17 @@ class LLMBot(Bot):
     ) -> T:
         """Helper method to query the LLM with game state context."""
 
-        game_string = json.dumps(
-            self.G,
-        )
-
         try:
             response = llm_model.prompt(
                 f"""
 {prompt}
 
-Game state:
-```json
-{game_string}
-```
+{game_state_to_prompt(self.G)}
 
-Previous reasoning:
+In the last turn that you played, you made the following reasoning:
 {self.last_reasoning or "No previous reasoning."}
 
-IMPORTANT: You must respond with ONLY a valid JSON object that matches the provided schema.
+IMPORTANT: You must respond with ONLY a valid JSON object that matches the provided schema without markdown tags.
 
 Schema:
 ```json
@@ -372,6 +579,7 @@ Schema:
 ```
 """,
                 system=SYSTEM_PROMPT,
+                google_search=False,  # Haven't seen noticeable improvements with this
                 # gemini llm plugin doesn't support my schemas
                 # schema=Schema,
             )
@@ -408,49 +616,63 @@ Schema:
     def skip_or_select_blind(self) -> SkipOrSelectBlindAction:
         """Decide whether to skip or select a blind based on the game state."""
         model: SkipOrSelectBlindModel = self._query_llm(
-            prompt="Decide whether to skip or select a blind.",
+            prompt="Decide whether to skip or select a blind. You can only skip the small or big blind, not the boss blind.",
             Schema=SkipOrSelectBlindModel,
         )
         return (Actions[model.action],)
 
     def select_cards_from_hand(self) -> SelectCardsFromHandAction:
         model: SelectCardsFromHandModel = self._query_llm(
-            prompt="Decide whether to play a hand or discard cards.",
+            prompt="""Decide whether to play a hand or discard cards.
+Don't try to win the round in a single hand, you have multiple hands and multiple discards.
+
+When you play a hand, you must select the indices of the cards you want to play.
+When you discard a hand, you must select the indices of the cards you want to discard. By default you can discard a maximum of 5 cards at a time.
+
+If you're running low on discards, but have plenty of hands, strategically play a hand to save the discards for later.
+If you're playing a hand, carefully think through the Balatro scoring rules, incorporating jokers.
+            """,
             Schema=SelectCardsFromHandModel,
         )
         return (Actions[model.action], make_one_based(model.indices))
 
     def select_shop_action(self) -> ShopAction:
         model: ShopActionModel = self._query_llm(
-            prompt="Decide whether to buy jokers, boosters or vouchers in the shop.",
+            prompt="Decide whether to buy jokers, boosters or vouchers in the shop. You can also sell jokers.",
             Schema=ShopActionModel,
         )
-        if model.indices is None:
-            # If no indices are provided, it means the action does not require any specific cards
-            return (Actions[model.action],)
-        return (Actions[model.action], make_one_based(model.indices))
+        action = Actions[model.action]
+        if action in (Actions.END_SHOP, Actions.REROLL_SHOP):
+            # If the action is to end or reroll the shop, no index is needed
+            return (action,)
+        if model.index is None:
+            print("Warning: No index provided for shop action, trying again.")
+            return self.select_shop_action()  # Retry if no index is provided
+        return (action, [model.index + 1])
 
     def select_booster_action(self) -> BoosterAction:
         """Decide whether to select a card from the booster pack or skip it."""
         model: BoosterActionModel = self._query_llm(
-            prompt="Decide whether to select a card from the booster pack or skip it.",
+            prompt="""Decide whether to select a card from the booster pack or skip selecting a card.
+Only skip the booster pack if you have no cards you want to select.
+These cards are already paid for, ignore any cost associated with them.
+When selecting a tarot or spectrum card from the booster pack make sure to apply it to the correct indices in hand (`card_indices`)
+""",
             Schema=BoosterActionModel,
         )
-        return (Actions[model.action], make_one_based(model.indices))
+        action = Actions[model.action]
+        if action == Actions.SKIP_BOOSTER_PACK:
+            # If the action is to skip the booster pack, no indices are needed
+            return (Actions.SKIP_BOOSTER_PACK,)
 
-    def sell_jokers(self) -> SellJokerAction:
-        # Skip for now
-        return (Actions.SELL_JOKER, [])
+        if model.card_indices:
+            return (
+                action,
+                make_one_based(model.indices),
+                make_one_based(model.card_indices),
+            )
 
-        # if not self.G.get("jokers"):
-        #     # If there are no jokers, skip this action
-        #     return (Actions.SELL_JOKER, [])
-
-        # model: SellJokerModel = self._query_llm(
-        #     prompt="Decide whether to sell jokers.",
-        #     Schema=SellJokerModel,
-        # )
-        # return (Actions[model.action], make_one_based(model.indices))
+        return (action, make_one_based(model.indices))
 
     def rearrange_jokers(self) -> RearrangeJokersAction:
         """Decide how to rearrange jokers in hand."""
@@ -514,9 +736,7 @@ if __name__ == "__main__":
         delete_game_cache()
 
     # creating balatro bot
-    mybot = LLMBot(
-        deck="Blue Deck", stake=1, seed="spicy", challenge=None, bot_port=12347
-    )
+    mybot = LLMBot(deck="Blue Deck", stake=1, seed=None, challenge=None, bot_port=12347)
 
     # mybot.start_balatro_instance()
     time.sleep(1)

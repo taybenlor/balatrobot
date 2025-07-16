@@ -57,6 +57,9 @@ class Actions(Enum):
     SEND_GAMESTATE = 20
 
 
+jsondata = {}
+
+
 class Bot:
     def __init__(
         self,
@@ -284,7 +287,6 @@ class Bot:
         if self.running:
             self.sendcmd("HELLO")
 
-            jsondata = {}
             try:
                 data, _ = self.sock.recvfrom(65536)
                 jsondata = json.loads(data)

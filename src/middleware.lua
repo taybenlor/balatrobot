@@ -186,12 +186,11 @@ function Middleware.c_play_hand()
 end
 
 function Middleware.c_select_blind()
-
-    local _blind_on_deck = G.GAME.blind_on_deck
-
     firewhenready(function()
+        local _blind_on_deck = G.GAME.blind_on_deck
         if G.GAME.blind_on_deck == 'Small' or G.GAME.blind_on_deck == 'Big' or G.GAME.blind_on_deck == 'Boss' then
             local _action = Bot.skip_or_select_blind(_blind_on_deck)
+
             if _action then
                 return true, _action
             else
@@ -202,15 +201,19 @@ function Middleware.c_select_blind()
     end,
 
     function(_action)
+        local _blind_on_deck = G.GAME.blind_on_deck
         local _blind_obj = G.blind_select_opts[string.lower(_blind_on_deck)]
 
         local _button = nil
         if _action == Bot.ACTIONS.SELECT_BLIND then
             local _select_button = _blind_obj:get_UIE_by_ID('select_blind_button')
             _button = _select_button
-        elseif _action == Bot.ACTIONS.SKIP_BLIND then
+        elseif _action == Bot.ACTIONS.SKIP_BLIND and _blind_on_deck ~= 'Boss' then
             local _skip_button = _blind_obj:get_UIE_by_ID('tag_'.._blind_on_deck).children[2]
             _button = _skip_button
+        else
+            -- Default to selecting the blind if action is not recognized
+            _button = _blind_obj:get_UIE_by_ID('select_blind_button') 
         end
     
         pushbutton(_button)
@@ -387,17 +390,17 @@ function Middleware.c_shop()
             pushbutton(Middleware.BUTTONS.REROLL)
         elseif _action == Bot.ACTIONS.BUY_CARD then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]])
+            usecard(G.shop_jokers.cards[_card[1]], 1)
         elseif _action == Bot.ACTIONS.BUY_VOUCHER then
             clickcard(G.shop_vouchers.cards[_card[1]])
-            usecard(G.shop_vouchers.cards[_card[1]])
+            usecard(G.shop_vouchers.cards[_card[1]], 1)
         elseif _action == Bot.ACTIONS.BUY_BOOSTER then
             _done_shopping = true
             clickcard(G.shop_booster.cards[_card[1]])
-            usecard(G.shop_booster.cards[_card[1]])
+            usecard(G.shop_booster.cards[_card[1]], 1)
         elseif _action == Bot.ACTIONS.SELL_JOKER then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]])
+            usecard(G.shop_jokers.cards[_card[1]], 1)
         end
 
         if not _done_shopping then
@@ -452,7 +455,7 @@ function Middleware.c_rearrange_consumables()
     end,
 
     function(_action, _order)
-        Middleware.c_rearrange_hand()
+        -- Middleware.c_rearrange_hand()
 
         if not _order or #_order ~= #G.consumables.cards  then return end
 
@@ -473,6 +476,12 @@ function Middleware.c_use_or_sell_consumables()
 
     firewhenready(function()
         local _action, _cards = Bot.use_or_sell_consumables()
+        if _action == Bot.ACTIONS.SELL_CONSUMABLE and _cards then
+            if G.consumables == nil or G.consumables.cards == nil then
+                return false
+            end
+        end
+
         if _action and _cards then
             return true, _action, _cards
         elseif _action then
@@ -486,10 +495,12 @@ function Middleware.c_use_or_sell_consumables()
         if _action == Bot.ACTIONS.USE_CONSUMABLE and _cards then
             for i = 1, #_cards do
                 clickcard(G.consumables.cards[_cards[i]])
-                usecard(G.consumables.cards[_cards[i]])
+                usecard(G.consumables.cards[_cards[i]], 1)
             end
         end
-        Middleware.c_rearrange_consumables()
+        -- Jump straight to play hand
+        Middleware.c_play_hand()
+        -- Middleware.c_rearrange_consumables()
     end)
 
 end

@@ -56,10 +56,13 @@ function BalatrobotAPI.update(dt)
 
             if _err == Utils.ERROR.NUMPARAMS then
                 BalatrobotAPI.respond("Error: Incorrect number of params for action " .. _action[1])
+                sendDebugMessage('Error: Incorrect number of params for action ' .. _action[1])
             elseif _err == Utils.ERROR.MSGFORMAT then
                 BalatrobotAPI.respond("Error: Incorrect message format. Should be ACTION|arg1|arg2")
+                sendDebugMessage('Error: Incorrect message format. Should be ACTION|arg1|arg2')
             elseif _err == Utils.ERROR.INVALIDACTION then
                 BalatrobotAPI.respond("Error: Action invalid for action " .. _action[1])
+                sendDebugMessage('Error: Action invalid for action ' .. _action[1])
             else
                 BalatrobotAPI.waitingForAction = false
                 BalatrobotAPI.queueaction(_action)
@@ -145,10 +148,10 @@ function BalatrobotAPI.init()
             BalatrobotAPI.waitingFor = 'select_shop_action'
             BalatrobotAPI.waitingForAction = true
         end)
-        Middleware.c_rearrange_hand = Hook.addbreakpoint(Middleware.c_rearrange_hand, function()
-            BalatrobotAPI.waitingFor = 'rearrange_hand'
-            BalatrobotAPI.waitingForAction = true
-        end)
+        -- Middleware.c_rearrange_hand = Hook.addbreakpoint(Middleware.c_rearrange_hand, function()
+        --     BalatrobotAPI.waitingFor = 'rearrange_hand'
+        --     BalatrobotAPI.waitingForAction = true
+        -- end)
         Middleware.c_rearrange_consumables = Hook.addbreakpoint(Middleware.c_rearrange_consumables, function()
             BalatrobotAPI.waitingFor = 'rearrange_consumables'
             BalatrobotAPI.waitingForAction = true

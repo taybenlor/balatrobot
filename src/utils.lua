@@ -12,7 +12,7 @@ function Utils.getCardData(card)
     _card.card_key = card.config.card_key
 
     if card.ability then
-        _card.ability = card.ability
+        -- _card.ability = card.ability
     end
 
     return _card
@@ -56,13 +56,13 @@ function Utils.getPackCardsData()
         for i = 1, #G.pack_cards.cards do
             local _card = {}
             local _ability = {}
-            _card.label = G.deck.cards[i].label
-            _card.name = G.deck.cards[i].config.card.name
+            _card.label = G.pack_cards.cards[i].label
+            _card.name = G.pack_cards.cards[i].config.card.name
             -- _card.suit = G.deck.cards[i].config.card.suit
             -- _card.value = G.deck.cards[i].config.card.value
             -- _card.card_key = G.deck.cards[i].config.card.card_key
-            if G.deck.cards[i].ability then
-                _ability.set = G.deck.cards[i].ability.set
+            if G.pack_cards.cards[i].ability then
+                _ability.set = G.pack_cards.cards[i].ability.set
             end
             _card.ability = _ability
             _pack[i] = _card
@@ -237,14 +237,14 @@ function Utils.getGamestate()
 
     _gamestate = Utils.getGameData()
 
-    _gamestate.deckback = Utils.getBackData()
+    -- _gamestate.deckback = Utils.getBackData()
     _gamestate.deck = Utils.getDeckData()
     _gamestate.hand = Utils.getHandData()
     _gamestate.jokers = Utils.getJokersData()
     _gamestate.consumables = Utils.getConsumablesData()
     _gamestate.ante = Utils.getAnteData()
     _gamestate.shop = Utils.getShopData() -- Empty if not in shop phase
-    _gamestate.handscores = Utils.getHandScoreData()
+    -- _gamestate.handscores = Utils.getHandScoreData()
     _gamestate.tags = Utils.getTagsData()
     _gamestate.current_round = Utils.getRoundData()
     _gamestate.pack_cards = Utils.getPackCardsData()

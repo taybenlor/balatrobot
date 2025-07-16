@@ -92,7 +92,8 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.BUY_CARD] = {
     func = "select_shop_action",
     isvalid = function(action)
         if G and G.STATE == G.STATES.SHOP and #action == 2 and #action[2] == 1 and
-        G.shop_jokers and G.shop_jokers.cards and #G.shop_jokers.cards >= action[2][1] and
+        G.shop_jokers and G.shop_jokers.cards and #G.shop_jokers.cards >= action[2][1] 
+        and G.shop_jokers.cards[action[2][1]] ~= nil and
         (G.GAME.dollars - G.GAME.bankrupt_at - G.shop_jokers.cards[action[2][1]].cost >= 0) then
             return true
         end
@@ -105,6 +106,7 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.BUY_VOUCHER] = {
     isvalid = function(action)
         if G and G.STATE == G.STATES.SHOP and #action == 2 and #action[2] == 1 and
         G.shop_vouchers and G.shop_vouchers.cards and #G.shop_vouchers.cards >= action[2][1] and
+        G.shop_vouchers.cards[action[2][1]] ~= nil and
         (G.GAME.dollars - G.GAME.bankrupt_at - G.shop_vouchers.cards[action[2][1]].cost >= 0) then
             return true
         end
@@ -117,6 +119,7 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.BUY_BOOSTER] = {
     isvalid = function(action)
         if G and G.STATE == G.STATES.SHOP and #action == 2 and #action[2] == 1 and
         G.shop_booster and G.shop_booster.cards and #G.shop_booster.cards >= action[2][1] and
+        G.shop_booster.cards[action[2][1]] ~= nil and
         (G.GAME.dollars - G.GAME.bankrupt_at - G.shop_booster.cards[action[2][1]].cost >= 0) then
             return true
         end

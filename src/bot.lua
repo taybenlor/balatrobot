@@ -123,6 +123,13 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.BUY_BOOSTER] = {
         return false
     end,
 }
+Bot.ACTIONPARAMS[Bot.ACTIONS.SELL_JOKER] = {
+    num_args = 2,
+    func = "select_shop_action",
+    isvalid = function(action)
+        return true
+    end
+}
 Bot.ACTIONPARAMS[Bot.ACTIONS.SELECT_BOOSTER_CARD] = {
     num_args = 3,
     func = "select_booster_action",
@@ -168,21 +175,21 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.SKIP_BOOSTER_PACK] = {
         return true
     end,
 }
-Bot.ACTIONPARAMS[Bot.ACTIONS.SELL_JOKER] = {
-    num_args = 2,
-    func = "sell_jokers",
-    isvalid = function(action)
-        if G and G.jokers and G.jokers.cards then
-            if not action[2] then return true end
+-- Bot.ACTIONPARAMS[Bot.ACTIONS.SELL_JOKER] = {
+--     num_args = 2,
+--     func = "sell_jokers",
+--     isvalid = function(action)
+--         if G and G.jokers and G.jokers.cards then
+--             if not action[2] then return true end
 
-            if Utils.isTableInRange(action[2], 1, #G.jokers.cards) and
-            not G.jokers.cards[action[2][1]].ability.eternal then
-                return true
-            end
-        end
-        return false
-    end,
-}
+--             if Utils.isTableInRange(action[2], 1, #G.jokers.cards) and
+--             not G.jokers.cards[action[2][1]].ability.eternal then
+--                 return true
+--             end
+--         end
+--         return false
+--     end,
+-- }
 Bot.ACTIONPARAMS[Bot.ACTIONS.USE_CONSUMABLE] = {
     num_args = 2,
     func = "use_or_sell_consumables",
@@ -378,11 +385,11 @@ function Bot.select_booster_action(pack_cards, hand_cards)
     return Bot.ACTIONS.SKIP_BOOSTER_PACK
 end
 
-function Bot.sell_jokers()
-    if #G.jokers.cards > 1 then
-        return Bot.ACTIONS.SELL_JOKER, { 2 }
-    end
-end
+-- function Bot.sell_jokers()
+--     if #G.jokers.cards > 1 then
+--         return Bot.ACTIONS.SELL_JOKER, { 2 }
+--     end
+-- end
 
 -- Return the action and indices of how the jokers should be rearranged
 -- ex. return Bot.ACTIONS.REARRANGE_JOKERS, { 2, 1, 3  }

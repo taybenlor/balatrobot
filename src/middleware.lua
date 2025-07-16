@@ -1,7 +1,6 @@
 
 Middleware = { }
 Middleware.choosingboostercards = false
-Middleware.selling_jokers = false
 
 Middleware.queuedactions = List.new()
 Middleware.currentaction = nil
@@ -225,15 +224,13 @@ function Middleware.c_choose_booster_cards()
     if not G.pack_cards.cards then return end
 
     Middleware.choosingboostercards = true
+    
+    sendDebugMessage("Passed checks!")
 
     firewhenready(function()
         local _action, _card, _hand_cards = Bot.select_booster_action(G.pack_cards.cards, G.hand.cards)
-        if _action and _card and _hand_cards then
+        if _action then
             return true, _action, _card, _hand_cards
-        elseif _action and _card then
-            return true, _action, _card, {}
-        elseif _action then
-            return true, _action, {}, {}
         else
             return false
         end
@@ -389,17 +386,20 @@ function Middleware.c_shop()
         elseif _action == Bot.ACTIONS.REROLL_SHOP then
             pushbutton(Middleware.BUTTONS.REROLL)
         elseif _action == Bot.ACTIONS.BUY_CARD then
-            clickcard(_choices[Bot.ACTIONS.BUY_CARD][_card[1]])
-            usecard(_choices[Bot.ACTIONS.BUY_CARD][_card[1]])
+            clickcard(G.shop_jokers.cards[_card[1]])
+            usecard(G.shop_jokers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_VOUCHER then
-            clickcard(_choices[Bot.ACTIONS.BUY_VOUCHER][_card[1]])
-            usecard(_choices[Bot.ACTIONS.BUY_VOUCHER][_card[1]])
+            clickcard(G.shop_vouchers.cards[_card[1]])
+            usecard(G.shop_vouchers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_BOOSTER then
             _done_shopping = true
-            clickcard(_choices[Bot.ACTIONS.BUY_BOOSTER][_card[1]])
-            usecard(_choices[Bot.ACTIONS.BUY_BOOSTER][_card[1]])
+            clickcard(G.shop_booster.cards[_card[1]])
+            usecard(G.shop_booster.cards[_card[1]])
+        elseif _action == Bot.ACTIONS.SELL_JOKER then
+            clickcard(G.shop_jokers.cards[_card[1]])
+            usecard(G.shop_jokers.cards[_card[1]])
         end
-    
+
         if not _done_shopping then
             queueaction(function()
                 firewhenready(function()
@@ -496,7 +496,7 @@ end
 
 
 function Middleware.c_rearrange_jokers()
-
+    
     firewhenready(function()
         local _action, _order = Bot.rearrange_jokers()
         if _action then
@@ -524,45 +524,40 @@ function Middleware.c_rearrange_jokers()
 
 end
 
-function Middleware.c_sell_jokers()
+-- function Middleware.c_sell_jokers()
 
-    sendDebugMessage("Start of outer sell joker function!")
-    if not G.jokers.cards then return end
-    if Middleware.selling_jokers == true then return end
+--     sendDebugMessage("Start of outer sell joker function!")
+--     if not G.jokers.cards then return end
 
-    return
+--     firewhenready(function()
+--         local _action, _cards = Bot.sell_jokers()
+--         if _action and _cards ~= nil then
+--             sendDebugMessage('action and cards')
+--             sendDebugMessage(_action)
+--             sendDebugMessage(_cards)
+--             return true, _action, _cards
+--         elseif _action then
+--             sendDebugMessage('action')
+--             sendDebugMessage(_action)
+--             return true, _action, nil
+--         else
+--             sendDebugMessage('no action or cards')
+--             return false
+--         end
+--     end,
 
-    firewhenready(function()
-        local _action, _cards = Bot.sell_jokers()
-        if _action and _cards ~= nil then
-            sendDebugMessage('action and cards')
-            sendDebugMessage(_action)
-            sendDebugMessage(_cards)
-            return true, _action, _cards
-        elseif _action then
-            sendDebugMessage('action')
-            sendDebugMessage(_action)
-            return true, _action, nil
-        else
-            sendDebugMessage('no action or cards')
-            return false
-        end
-    end,
-
-    function(_action, _cards)
-        sendDebugMessage("Reached the inner function for sell jokers!")
-        if _action == Bot.ACTIONS.SELL_JOKER and _cards then
-            for i = 1, #_cards do
-                sendDebugMessage("trying to click a joker!")
-                clickcard(G.jokers.cards[_cards[i]])
-                usecard(G.jokers.cards[_cards[i]])
-            end
-        end
-        Middleware.selling_jokers = false
-        Middleware.c_rearrange_jokers()
-    end)
-
-end
+--     function(_action, _cards)
+--         sendDebugMessage("Reached the inner function for sell jokers!")
+--         if _action == Bot.ACTIONS.SELL_JOKER and _cards then
+--             for i = 1, #_cards do
+--                 sendDebugMessage("trying to click a joker!")
+--                 clickcard(G.jokers.cards[_cards[i]])
+--                 usecard(G.jokers.cards[_cards[i]])
+--             end
+--         end
+--         Middleware.c_rearrange_jokers()
+--     end)
+-- end
 
 function Middleware.c_start_run()
 
@@ -633,9 +628,9 @@ local function c_initgamehooks()
     -- Detect when hand has been drawn
     G.GAME.blind.drawn_to_hand = Hook.addcallback(G.GAME.blind.drawn_to_hand, function(...)
         firewhenready(function()
-            return G.buttons and G.STATE_COMPLETE and G.STATE == G.STATES.SELECTING_HAND and Middleware.selling_jokers == false
+            return G.buttons and G.STATE_COMPLETE and G.STATE == G.STATES.SELECTING_HAND
         end, function()
-            Middleware.c_sell_jokers()
+            Middleware.c_rearrange_jokers()
         end)
     end)
 

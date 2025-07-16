@@ -207,8 +207,6 @@ class Bot:
                 return self.select_shop_action(self, self.G)
             case "select_booster_action":
                 return self.select_booster_action(self, self.G)
-            case "sell_jokers":
-                return self.sell_jokers(self, self.G)
             case "rearrange_jokers":
                 return self.rearrange_jokers(self, self.G)
             case "use_or_sell_consumables":
@@ -226,7 +224,7 @@ class Bot:
 
             self.running = True
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.settimeout(5)
+            self.sock.settimeout(30)
             # self.sock.connect(self.addr)
 
         if self.running:
@@ -253,7 +251,7 @@ class Bot:
                 print(e)
                 print("Socket error, reconnecting...")
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.sock.settimeout(1)
+                self.sock.settimeout(30)
                 #  self.sock.connect(self.addr)
 
     def run(self):
@@ -263,7 +261,7 @@ class Bot:
                 msg = bytes("HELLO", "utf-8")
                 s.sendto(msg, self.addr)
                 try:
-                    time.sleep(1)
+                    time.sleep(0.5)
                     data, _ = s.recvfrom(65536)
                     jsondata = json.loads(data)
                     if "response" in jsondata:

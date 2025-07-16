@@ -54,7 +54,17 @@ function Utils.getPackCardsData()
 
     if G and G.pack_cards and G.pack_cards.cards then
         for i = 1, #G.pack_cards.cards do
-            local _card = Utils.getCardData(G.pack_cards.cards[i])
+            local _card = {}
+            local _ability = {}
+            _card.label = G.deck.cards[i].label
+            _card.name = G.deck.cards[i].config.card.name
+            -- _card.suit = G.deck.cards[i].config.card.suit
+            -- _card.value = G.deck.cards[i].config.card.value
+            -- _card.card_key = G.deck.cards[i].config.card.card_key
+            if G.deck.cards[i].ability then
+                _ability.set = G.deck.cards[i].ability.set
+            end
+            _card.ability = _ability
             _pack[i] = _card
         end
     end
@@ -67,7 +77,13 @@ function Utils.getJokersData()
 
     if G and G.jokers and G.jokers.cards then
         for i = 1, #G.jokers.cards do
-            local _card = Utils.getCardData(G.jokers.cards[i])
+            local _card = {}
+
+            _card.label = G.jokers.cards[i].label
+            _card.cost = G.jokers.cards[i].cost
+            _card.debuff = G.jokers.cards[i].debuff
+            _card.name = G.jokers.cards[i].config.card.name
+
             _jokers[i] = _card
         end
     end
@@ -78,9 +94,9 @@ end
 function Utils.getConsumablesData()
     local _consumables = {}
 
-    if G and G.GAME.consumables and G.GAME.consumables.cards then
-        for i = 1, #G.GAME.consumeables.cards do
-            local _card = Utils.getCardData(G.GAME.consumeables.cards[i])
+    if G and G.consumeables and G.consumeables.cards then
+        for i = 1, #G.consumeables.cards do
+            local _card = Utils.getCardData(G.consumeables.cards[i])
             _consumables[i] = _card
         end
     end

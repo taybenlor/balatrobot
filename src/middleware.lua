@@ -121,11 +121,14 @@ local function usecard(card, delay)
         end
         local _buy_and_use_button = card.children.buy_and_use_button and card.children.buy_and_use_button.definition
         local _buy_button = card.children.buy_button and card.children.buy_button.definition
+        local _sell_button = card.children.sell_button and card.children.sell_button.definition
 
         if _buy_and_use_button then
             pushbutton_instant(_buy_and_use_button, delay)
         elseif _buy_button then
             pushbutton_instant(_buy_button, delay)
+        elseif _sell_button then
+            pushbutton_instant(_sell_button, delay)
         end
     end, delay)
 end

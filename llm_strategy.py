@@ -247,7 +247,7 @@ def select_cards_to_prompt(gamestate: GameState) -> str:
     hand = gamestate.get("hand", [])
     return_str += "Your Hand is:\n"
     for i, card in enumerate(hand):
-        return_str += f"- {card['name']} (index: {i})\n"
+        return_str += f"- {card['name']} {card['label']} (index: {i})\n"
 
     return return_str
 
@@ -266,18 +266,20 @@ def blind_to_prompt(gamestate: GameState) -> str:
     blind_str += f"Inflation: {gamestate.get('inflation', 0)}%\n"
 
     jokers = gamestate.get("jokers", [])
-    shop_str += f"You have {len(jokers)} out of the default 5 maximum.\n You have the following jokers:\n"
+    blind_str += f"You have {len(jokers)} out of the default 5 maximum.\n You have the following jokers:\n"
     for i, joker in enumerate(jokers):
-        shop_str += f"- {joker['label']} (Description: {jokers_dict[joker['label']]})\n"
+        blind_str += (
+            f"- {joker['label']} (Description: {jokers_dict[joker['label']]})\n"
+        )
     else:
-        shop_str += "You have no jokers.\n"
+        blind_str += "You have no jokers.\n"
 
-    shop_str += f"You have {len(gamestate.get('consumables', []))} out of the default 2 maximum.\n"
-    shop_str += "You already have the following consumables:\n"
+    blind_str += f"You have {len(gamestate.get('consumables', []))} out of the default 2 maximum.\n"
+    blind_str += "You already have the following consumables:\n"
     for i, consumable in enumerate(gamestate.get("consumables", [])):
-        shop_str += f"- {consumable['label']}\n"
+        blind_str += f"- {consumable['label']}\n"
     else:
-        shop_str += "You have no consumables.\n"
+        blind_str += "You have no consumables.\n"
 
     return blind_str
 

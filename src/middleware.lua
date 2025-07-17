@@ -150,9 +150,8 @@ local function usecard(card, delay)
         elseif _buy_button then
             pushbutton_instant(_buy_button, delay)
         elseif _use_button then
-            sendDebugMessage("WE ARE HERE!")
+            -- why use a function when this will work directly? 
             G.FUNCS.use_card({config = {ref_table = card}})
-            -- pushbutton_instant(_use_button, delay)
         end
     end, delay)
 end
@@ -377,18 +376,24 @@ function Middleware.c_shop()
     local _b_reroll_shop = Middleware.BUTTONS.REROLL and Middleware.BUTTONS.REROLL.config and Middleware.BUTTONS.REROLL.config.button
 
     local _cards_to_buy = { }
-    for i = 1, #G.shop_jokers.cards do
-        _cards_to_buy[i] = G.shop_jokers.cards[i].cost <= G.GAME.dollars and G.shop_jokers.cards[i] or nil
+    if G.shop_jokers.cards and #G.shop_jokers.cards > 0 then
+        for i = 1, #G.shop_jokers.cards do
+            _cards_to_buy[i] = G.shop_jokers.cards[i].cost <= G.GAME.dollars and G.shop_jokers.cards[i] or nil
+        end
     end
 
     local _vouchers_to_buy = { }
-    for i = 1, #G.shop_vouchers.cards do
-        _vouchers_to_buy[i] = G.shop_vouchers.cards[i].cost <= G.GAME.dollars and G.shop_vouchers.cards[i] or nil
+    if G.shop_vouchers.cards and #G.shop_vouchers.cards > 0 then
+        for i = 1, #G.shop_vouchers.cards do
+            _vouchers_to_buy[i] = G.shop_vouchers.cards[i].cost <= G.GAME.dollars and G.shop_vouchers.cards[i] or nil
+        end
     end
 
     local _boosters_to_buy = { }
-    for i = 1, #G.shop_booster.cards do
-        _boosters_to_buy[i] = G.shop_booster.cards[i].cost <= G.GAME.dollars and G.shop_booster.cards[i] or nil
+    if G.shop_booster.cards and #G.shop_booster.cards > 0 then
+        for i = 1, #G.shop_booster.cards do
+            _boosters_to_buy[i] = G.shop_booster.cards[i].cost <= G.GAME.dollars and G.shop_booster.cards[i] or nil
+        end
     end
 
     local _choices = { }
@@ -408,6 +413,7 @@ function Middleware.c_shop()
     end,
 
     function(_action, _card)
+        sendDebugMessage("hello!")
         if _action == Bot.ACTIONS.END_SHOP then
             pushbutton(Middleware.BUTTONS.NEXT_ROUND)
             _done_shopping = true
@@ -425,8 +431,10 @@ function Middleware.c_shop()
             usecard(G.shop_booster.cards[_card[1]])
         elseif _action == Bot.ACTIONS.SELL_JOKER then
             clickcard(G.jokers.cards[_card[1]])
-            sellcard(G.jokers.cards[_card[1]], 1)
+            sellcard(G.jokers.cards[_card[1]])
         end
+        
+        sendDebugMessage("hello again!")
 
         if not _done_shopping then
             queueaction(function()

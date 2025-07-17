@@ -156,3 +156,68 @@ jokers_dict.update(
         "Castle": "This Joker gains +3 Chips per discarded Heart card, suit changes every round",
     }
 )
+
+scoring_rules = """
+# Scoring Rules for Balatro
+## 🔢 Basic Formula
+
+The total score of a hand is calculated using the formula:
+
+**Score = Chips × Multiplier**
+
+This value is computed through four main stages, in the following order:
+
+### 1. Base Hand Chip/Multiplier
+- Determined by your poker hand type (e.g., Pair, Straight, Full House) and its level (upgraded via Planet cards).
+- This stage adds base chips and base mult based on the hand type and level.
+- Certain jokers (e.g., Space Joker) or boss effects (e.g., The Arm, The Flint) can modify hand level or base values.
+- Hand type recognition can be modified by jokers like Four Fingers, Shortcut, and Smeared Joker.
+- Order of cards does not affect hand recognition.
+
+### 2. Played Cards’ Scoring
+- Only scored cards (those contributing to the hand type) add chip value and trigger enhancements/effects.
+- Cards are evaluated left to right, and order can influence outcomes when involving:
+    - Mult-on-score effects (from jokers or “Mult” enhancement)
+    - Glass cards (double next multiplier)
+    - Certain jokers (e.g., Bloodstone)
+- Jokers like Splash allow all played cards to be scored.
+- Cards can be debuffed (e.g., by “The Verdant”) and thus won’t trigger effects or give chips.
+
+### 3. Held-in-Hand Effects
+- Applies to cards in your hand, scored or not.
+- Effects include:
+    - Steel-enhanced cards (×1.5 mult)
+    - Baron joker (mult from Kings)
+    - Shoot the Moon (mult from Queens)
+    - Reserved Parking ($ chance from face cards)
+    - Raised Fist (mult from lowest-ranked card)
+- Red Seals trigger these effects twice.
+- “The Hook” discards your hand before evaluation, disabling held effects.
+- Debuffed cards do not trigger held effects.
+
+### 4. Joker Effects
+- Evaluated left to right.
+- Jokers give +chips, +mult, or ×mult, based on their conditions.
+- Effects can be modified by Joker enhancements:
+    - Foil: +50 chips
+    - Holographic: +10 mult
+    - Polychrome: ×1.5 mult
+- Order matters when:
+    - Using Blueprint/Brainstorm
+    - Combining +mult and ×mult jokers (always put ×mult to the right for maximum effect)
+- Upgradeable jokers trigger upgrades before giving effect.
+- Degrading jokers (e.g., Ice Cream) apply effect before degrading.
+"""
+
+shop_strategy = """
+## Key Strategies for the Shop
+*Prioritize Synergy*: Look for Jokers that work well together. For example, a Joker that boosts chips based on discards is excellent for a discard-heavy build. A Joker that boosts multipliers based on hand type is great if you're focusing on a specific hand like straights or flushes.
+*Balance Jokers*: Aim for a mix of Jokers that provide chip boosts, multiplier boosts, and multiplier scaling (xMult). A deck with only one type of Joker can be less effective in the long run.
+*Consider Hand Types*: Choose a hand type (e.g., flush, full house) and build your deck around it. This allows for more focused strategy and easier scaling with Planet and Tarot cards.
+*Don't Overlook Vouchers*: Vouchers provide permanent upgrades, so keep an eye out for them in the shop after defeating bosses. Some vouchers offer significant discounts, so plan your purchases accordingly.
+*Be Mindful of Blinds*: Check the upcoming blinds, especially boss blinds, to anticipate their abilities and adjust your deck accordingly.
+*Reroll Strategically*: Don't be afraid to reroll the shop, especially if you have a good amount of gold and a specific Joker in mind. Rerolls become more expensive with each use, but reset after each round.
+*Utilize Tarot Cards*: Tarot cards can be powerful tools for deck manipulation, allowing you to add, remove, or modify cards. They can be crucial for tailoring your deck to your chosen strategy.
+*Consider Skipping Blinds*: If you can afford to skip a blind, you can potentially save money for the next shop visit and earn more interest on your gold, which can be used for future upgrades.
+*Economy Matters*: Keep an eye on your gold and try to maximize interest by saving. This will allow you to purchase more upgrades in the shop.
+"""

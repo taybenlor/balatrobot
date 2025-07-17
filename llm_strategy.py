@@ -15,7 +15,7 @@ from typing import Any, List, Literal, Optional, Tuple, TypeVar, Union
 
 from typing import TypedDict
 
-from jokers import jokers_dict
+from jokers import jokers_dict, scoring_rules, shop_strategy
 
 # Load environment variables from .env file
 load_dotenv()
@@ -142,7 +142,7 @@ def game_state_to_prompt(gamestate: GameState) -> str:
         output_str += blind_to_prompt(gamestate)
     elif gamestate.get("waitingFor", None) == "use_or_sell_consumables":
         output_str += consumables_to_prompt(gamestate)
-    output_str += current_deck_to_prompt(gamestate)
+
     return output_str
 
 
@@ -186,6 +186,10 @@ def shop_state_to_prompt(gamestate: GameState) -> str:
     else:
         shop_str += "You have no consumables.\n"
 
+    shop_str += current_deck_to_prompt(gamestate)
+
+    shop_str += shop_strategy
+
     return shop_str
 
 
@@ -205,12 +209,12 @@ def current_deck_to_prompt(gamestate: GameState) -> str:
 def booster_pack_to_prompt(gamestate: GameState) -> str:
     """Convert the booster pack to a string representation for LLM prompts."""
     boosters = gamestate.get("pack_cards", [])
-    if not boosters:
-        return "No cards in the booster pack."
 
     booster_str = "Booster Pack:\n"
     for i, card in enumerate(boosters):
         booster_str += f"- {card.get('name', '')} {card.get('label', '')} (index: {i}, Ability: `{json.dumps(card['ability'])}`)\n"
+    else:
+        booster_str += "No cards available in the booster pack.\n"
 
     if gamestate.get("hand"):
         booster_str += "Your Hand:\n"
@@ -249,6 +253,10 @@ def select_cards_to_prompt(gamestate: GameState) -> str:
     for i, card in enumerate(hand):
         return_str += f"- {card['name']} {card['label']} (index: {i})\n"
 
+    return_str += current_deck_to_prompt(gamestate)
+
+    return_str += scoring_rules
+
     return return_str
 
 
@@ -259,11 +267,12 @@ def blind_to_prompt(gamestate: GameState) -> str:
         return "No blind data available."
 
     blind_str = f"You are deciding whether to skip or select the {blinds.get('ondeck', 'None')} blind.\n"
-    blind_str += f"Boss Blind: {blinds.get('boss', 'None')}\n"
+    blind_str += f"Upcoming Boss Blind: {blinds.get('boss', 'None')}\n"
     blind_str += f"Tags for skipping: `{json.dumps(blinds.get('skip_tag', {}))}`\n"
     blind_str += f"Round: {gamestate.get('round', 0)}\n"
     blind_str += f"Current Dollars: {gamestate.get('dollars', 0)}\n"
     blind_str += f"Inflation: {gamestate.get('inflation', 0)}%\n"
+    blind_str += f"If you skip the Small blind you will progress to the Big Blind. If you skip the Big Blind you will progress to the Boss Blind.\n"
 
     jokers = gamestate.get("jokers", [])
     blind_str += f"You have {len(jokers)} out of the default 5 maximum.\n You have the following jokers:\n"
@@ -281,18 +290,22 @@ def blind_to_prompt(gamestate: GameState) -> str:
     else:
         blind_str += "You have no consumables.\n"
 
+    blind_str += current_deck_to_prompt(gamestate)
+
     return blind_str
 
 
 def consumables_to_prompt(gamestate: GameState) -> str:
     """Convert the consumables state to a string representation for LLM prompts."""
     consumables = gamestate.get("consumables", [])
-    if not consumables:
-        return "No consumables available."
 
     consumables_str = "Your consumables:\n"
     for i, consumable in enumerate(consumables):
         consumables_str += f"- {consumable['label']} (index: {i})\n"
+    else:
+        consumables_str += "You have no consumables.\n"
+
+    consumables_str += current_deck_to_prompt(gamestate)
 
     return consumables_str
 
@@ -613,7 +626,9 @@ Schema:
             # )
             return self._query_llm(prompt, Schema)  # Retry with the same prompt
         except Exception as e:
-            raise RuntimeError(f"Error querying LLM: {e}")
+            print("--")
+            print("Error querying LLM:", e)
+            return self._query_llm(prompt, Schema)  # Retry with the same prompt
 
     def skip_or_select_blind(self) -> SkipOrSelectBlindAction:
         """Decide whether to skip or select a blind based on the game state."""
@@ -625,22 +640,22 @@ Schema:
 
     def select_cards_from_hand(self) -> SelectCardsFromHandAction:
         model: SelectCardsFromHandModel = self._query_llm(
-            prompt="""Decide whether to play a hand or discard cards.
+            prompt=f"""Decide whether to play a hand or discard cards.
 Don't try to win the round in a single hand, you have multiple hands and multiple discards.
 
 When you play a hand, you must select the indices of the cards you want to play.
 When you discard a hand, you must select the indices of the cards you want to discard. By default you can discard a maximum of 5 cards at a time.
 
 If you're running low on discards, but have plenty of hands, strategically play a hand to save the discards for later.
-If you're playing a hand, carefully think through the Balatro scoring rules, incorporating jokers.
-            """,
+If you're playing a hand, carefully think through the Balatro scoring rules.
+""",
             Schema=SelectCardsFromHandModel,
         )
         return (Actions[model.action], make_one_based(model.indices))
 
     def select_shop_action(self) -> ShopAction:
         model: ShopActionModel = self._query_llm(
-            prompt="Decide whether to buy jokers, boosters or vouchers in the shop. You can also sell jokers.",
+            prompt=f"Decide whether to buy jokers, boosters or vouchers in the shop. You can also sell jokers.\n",
             Schema=ShopActionModel,
         )
         action = Actions[model.action]

@@ -261,61 +261,18 @@ class Bot:
             case "select_shop_action":
                 return self.select_shop_action()
             case "select_booster_action":
-                return self.select_booster_action(self, self.G)
-            case "rearrange_jokers":
-                return self.rearrange_jokers()
+                return self.select_booster_action()
             case "use_or_sell_consumables":
                 return self.use_or_sell_consumables()
-            case "rearrange_consumables":
-                return self.rearrange_consumables()
-            case "rearrange_hand":
-                return self.rearrange_hand()
-
-    def run_step(self):
-        if self.sock is None:
-            self.verifyimplemented()
-            self.state = {}
-            self.G = None
-
-            self.running = True
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.settimeout(30)
-            # self.sock.connect(self.addr)
-
-        if self.running:
-            self.sendcmd("HELLO")
-
-            try:
-                data, _ = self.sock.recvfrom(65536)
-                jsondata = json.loads(data)
-
-                if "response" in jsondata:
-                    print(jsondata["response"])
-                else:
-                    self.G = jsondata
-                    if self.G["waitingForAction"]:
-                        cache_state(self.G["waitingFor"], self.G)
-                        action = self.chooseaction()
-                        if action == None:
-                            raise ValueError("All actions must return a value!")
-
-                        cmdstr = self.actionToCmd(action)
-                        self.sendcmd(cmdstr)
-            except socket.error as e:
-                print(e)
-                print("Socket error, reconnecting...")
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.sock.settimeout(30)
-                #  self.sock.connect(self.addr)
 
     def run(self):
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                print("Connecting to Balatro...")
                 s.settimeout(5)
                 msg = bytes("HELLO", "utf-8")
                 s.sendto(msg, self.addr)
                 try:
-                    time.sleep(0.5)
                     data, _ = s.recvfrom(65536)
                     jsondata = json.loads(data)
                     if "response" in jsondata:
@@ -330,8 +287,8 @@ class Bot:
 
                             cmdstr = self.actionToCmd(action)
                             msg = bytes(cmdstr, "utf-8")
-                            time.sleep(0.1)
                             s.sendto(msg, self.addr)
+                            time.sleep(1.5)
                 except socket.error as e:
                     print(e)
                     print("Socket error, reconnecting...")

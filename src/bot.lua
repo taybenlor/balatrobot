@@ -133,6 +133,13 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.SELL_JOKER] = {
         return true
     end
 }
+Bot.ACTIONPARAMS[Bot.ACTIONS.REARRANGE_JOKERS] = {
+    num_args = 2,
+    func = "select_cards_from_hand",
+    isvalid = function(action)
+        return true
+    end
+}
 Bot.ACTIONPARAMS[Bot.ACTIONS.SELECT_BOOSTER_CARD] = {
     num_args = 3,
     func = "select_booster_action",
@@ -209,22 +216,22 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.SELL_CONSUMABLE] = {
         return true
     end,
 }
-Bot.ACTIONPARAMS[Bot.ACTIONS.REARRANGE_JOKERS] = {
-    num_args = 2,
-    func = "rearrange_jokers",
-    isvalid = function(action)
-        if G and G.jokers and G.jokers.cards then
-            if not action[2] then return true end
+-- Bot.ACTIONPARAMS[Bot.ACTIONS.REARRANGE_JOKERS] = {
+--     num_args = 2,
+--     func = "rearrange_jokers",
+--     isvalid = function(action)
+--         if G and G.jokers and G.jokers.cards then
+--             if not action[2] then return true end
 
-            if Utils.isTableUnique(action[2]) and
-            Utils.isTableInRange(action[2], 1, #G.jokers.cards) and
-            #action[2] == #G.jokers.cards then
-                return true
-            end
-        end
-        return false
-    end,
-}
+--             if Utils.isTableUnique(action[2]) and
+--             Utils.isTableInRange(action[2], 1, #G.jokers.cards) and
+--             #action[2] == #G.jokers.cards then
+--                 return true
+--             end
+--         end
+--         return false
+--     end,
+-- }
 Bot.ACTIONPARAMS[Bot.ACTIONS.REARRANGE_CONSUMABLES] = {
     num_args = 2,
     func = "rearrange_consumables",
@@ -396,9 +403,9 @@ end
 
 -- Return the action and indices of how the jokers should be rearranged
 -- ex. return Bot.ACTIONS.REARRANGE_JOKERS, { 2, 1, 3  }
-function Bot.rearrange_jokers()
-    --return Bot.ACTIONS.REARRANGE_JOKERS, { 2, 1 }
-end
+-- function Bot.rearrange_jokers()
+--     --return Bot.ACTIONS.REARRANGE_JOKERS, { 2, 1 }
+-- end
 
 function Bot.use_or_sell_consumables()
     

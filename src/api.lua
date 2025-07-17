@@ -160,10 +160,10 @@ function BalatrobotAPI.init()
             BalatrobotAPI.waitingFor = 'use_or_sell_consumables'
             BalatrobotAPI.waitingForAction = true
         end)
-        Middleware.c_rearrange_jokers = Hook.addbreakpoint(Middleware.c_rearrange_jokers, function()
-            BalatrobotAPI.waitingFor = 'rearrange_jokers'
-            BalatrobotAPI.waitingForAction = true
-        end)
+        -- Middleware.c_rearrange_jokers = Hook.addbreakpoint(Middleware.c_rearrange_jokers, function()
+        --     BalatrobotAPI.waitingFor = 'rearrange_jokers'
+        --     BalatrobotAPI.waitingForAction = true
+        -- end)
         -- Middleware.c_sell_jokers = Hook.addbreakpoint(Middleware.c_sell_jokers, function()
         --     BalatrobotAPI.waitingFor = 'sell_jokers'
         --     BalatrobotAPI.waitingForAction = true

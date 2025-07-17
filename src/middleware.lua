@@ -193,20 +193,42 @@ function Middleware.c_play_hand()
     end, 
     
     function(_action, _cards_to_play)
-        for i = 1, #_cards_to_play do
-            clickcard(G.hand.cards[_cards_to_play[i]])
-        end
-    
         -- Option 1: Play Hand
         if _action == Bot.ACTIONS.PLAY_HAND then
+            for i = 1, #_cards_to_play do
+                clickcard(G.hand.cards[_cards_to_play[i]])
+            end
             local _play_button = UIBox:get_UIE_by_ID('play_button', G.buttons.UIRoot)
             pushbutton(_play_button)
         end
     
         -- Option 2: Discard Hand
         if _action == Bot.ACTIONS.DISCARD_HAND then
+            for i = 1, #_cards_to_play do
+                clickcard(G.hand.cards[_cards_to_play[i]])
+            end
             local _discard_button = UIBox:get_UIE_by_ID('discard_button', G.buttons.UIRoot)
             pushbutton(_discard_button)
+        end
+
+        if _action == Bot.ACTIONS.REARRANGE_HAND then
+            for k,v in ipairs(_cards_to_play) do
+                if k < v then
+                    G.hand.cards[k], G.hand.cards[v] = G.hand.cards[v], G.hand.cards[k]
+                end
+            end
+
+            G.hand:set_ranks()
+        end
+
+        if _action == Bot.ACTIONS.REARRANGE_JOKERS then
+            for k,v in ipairs(_cards_to_play) do
+                if k < v then
+                    G.jokers.cards[k], G.jokers.cards[v] = G.jokers.cards[v], G.jokers.cards[k]
+                end
+            end
+
+            G.jokers:set_ranks()
         end
     end)
 end
@@ -447,65 +469,65 @@ function Middleware.c_shop()
     
 end
 
-function Middleware.c_rearrange_hand()
+-- function Middleware.c_rearrange_hand()
 
-    firewhenready(function()
-        local _action, _order = Bot.rearrange_hand()
-        if _action then
-            return true, _action, _order
-        else
-            return false
-        end
-    end,
+--     firewhenready(function()
+--         local _action, _order = Bot.rearrange_hand()
+--         if _action then
+--             return true, _action, _order
+--         else
+--             return false
+--         end
+--     end,
 
-    function(_action, _order)
-        Middleware.c_play_hand()
+--     function(_action, _order)
+--         Middleware.c_play_hand()
 
-        if not _order or #_order ~= #G.hand.cards then return end
+--         if not _order or #_order ~= #G.hand.cards then return end
 
-        queueaction(function()
-            for k,v in ipairs(_order) do
-                if k < v then
-                    G.hand.cards[k], G.hand.cards[v] = G.hand.cards[v], G.hand.cards[k]
-                end
-            end
+--         queueaction(function()
+--             for k,v in ipairs(_order) do
+--                 if k < v then
+--                     G.hand.cards[k], G.hand.cards[v] = G.hand.cards[v], G.hand.cards[k]
+--                 end
+--             end
 
-            G.hand:set_ranks()
-        end)
-    end)
+--             G.hand:set_ranks()
+--         end)
+--     end)
 
-end
+-- end
 
-function Middleware.c_rearrange_consumables()
+-- function Middleware.c_rearrange_consumables()
 
-    firewhenready(function()
-        local _action, _order = Bot.rearrange_consumables()
-        if _action then
-            return true, _action, _order
-        else
-            return false
-        end
-    end,
+--     firewhenready(function()
+--         local _action, _order = Bot.rearrange_consumables()
+--         if _action then
+--             return true, _action, _order
+--         else
+--             return false
+--         end
+--     end,
 
-    function(_action, _order)
-        -- Middleware.c_rearrange_hand()
+--     function(_action, _order)
+--         -- Middleware.c_rearrange_hand()
 
-        if not G.consumeables then return end
-        if not G.consumeables.cards then return end
-        if not _order or #_order ~= #G.consumeables.cards  then return end
+--         if not G.consumeables then return end
+--         if not G.consumeables.cards then return end
+--         if not _order or #_order ~= #G.consumeables.cards  then return end
 
-        queueaction(function()
-            for k,v in ipairs(_order) do
-                if k < v then
-                    G.consumeables.cards[k], G.consumeables.cards[v] = G.consumeables.cards[v], G.consumeables.cards[k]
-                end
-            end
+--         queueaction(function()
+--             for k,v in ipairs(_order) do
+--                 if k < v then
+--                     G.consumeables.cards[k], G.consumeables.cards[v] = G.consumeables.cards[v], G.consumeables.cards[k]
+--                 end
+--             end
 
-            G.consumeables:set_ranks()
-        end)
-    end)
+--             G.consumeables:set_ranks()
+--         end)
+--     end)
 
-end
+-- end
 
 function Middleware.c_use_or_sell_consumables()
     
@@ -554,34 +576,34 @@ function Middleware.c_use_or_sell_consumables()
 end
 
 
-function Middleware.c_rearrange_jokers()
+-- function Middleware.c_rearrange_jokers()
     
-    firewhenready(function()
-        local _action, _order = Bot.rearrange_jokers()
-        if _action then
-            return true, _action, _order
-        else
-            return false
-        end
-    end,
+--     firewhenready(function()
+--         local _action, _order = Bot.rearrange_jokers()
+--         if _action then
+--             return true, _action, _order
+--         else
+--             return false
+--         end
+--     end,
 
-    function(_action, _order)
-        Middleware.c_use_or_sell_consumables()
+--     function(_action, _order)
+--         Middleware.c_use_or_sell_consumables()
 
-        if not _order or #_order ~= #G.jokers.cards then return end
+--         if not _order or #_order ~= #G.jokers.cards then return end
 
-        queueaction(function()
-            for k,v in ipairs(_order) do
-                if k < v then
-                    G.jokers.cards[k], G.jokers.cards[v] = G.jokers.cards[v], G.jokers.cards[k]
-                end
-            end
+--         queueaction(function()
+--             for k,v in ipairs(_order) do
+--                 if k < v then
+--                     G.jokers.cards[k], G.jokers.cards[v] = G.jokers.cards[v], G.jokers.cards[k]
+--                 end
+--             end
 
-            G.jokers:set_ranks()
-        end)
-    end)
+--             G.jokers:set_ranks()
+--         end)
+--     end)
 
-end
+-- end
 
 -- function Middleware.c_sell_jokers()
 
@@ -689,7 +711,7 @@ local function c_initgamehooks()
         firewhenready(function()
             return G.buttons and G.STATE_COMPLETE and G.STATE == G.STATES.SELECTING_HAND
         end, function()
-            Middleware.c_rearrange_jokers()
+            Middleware.c_play_hand()
         end)
     end)
 

@@ -261,9 +261,7 @@ class Bot:
             case "select_shop_action":
                 return self.select_shop_action()
             case "select_booster_action":
-                return self.select_booster_action()
-            case "sell_jokers":
-                return self.sell_jokers()
+                return self.select_booster_action(self, self.G)
             case "rearrange_jokers":
                 return self.rearrange_jokers()
             case "use_or_sell_consumables":

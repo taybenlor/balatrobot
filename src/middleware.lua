@@ -101,8 +101,7 @@ local function clickcard(card, delay)
     end, delay)
 end
 
-local function usecard(card, delay)
-
+local function sellcard(card, delay)
     queueaction(function()
         local _use_button = nil
         local _use_button = card.children.use_button and card.children.use_button.definition
@@ -119,16 +118,40 @@ local function usecard(card, delay)
 
             return
         end
+    end, delay)
+end
+
+local function usecard(card, delay)
+
+    queueaction(function()
+        
+        -- if _use_button and _use_button.config.button == nil then
+        --     local _node_index = card.ability.consumeable and 2 or 1
+        --     _use_button = _use_button.nodes[_node_index]
+
+        --     if card.area and card.area.config.type == 'joker' then
+        --         sendDebugMessage("WE ARE HERE!")
+        --         local _use_button = card.children.use_button
+        --         sendDebugMessage("WEVE GOT A USE BUTTON")
+        --         -- local _use_button = card.children.use_button.definition.nodes[1].nodes[1].nodes[1].nodes[1]
+        --         pushbutton_instant(_use_button, delay)
+        --     else
+        --         pushbutton_instant(_use_button, delay)
+        --     end
+
+        --     return
+        -- end
         local _buy_and_use_button = card.children.buy_and_use_button and card.children.buy_and_use_button.definition
         local _buy_button = card.children.buy_button and card.children.buy_button.definition
-        local _sell_button = card.children.sell_button and card.children.sell_button.definition
-
+        local _use_button = card.children.use_button and card.children.use_button.definition
+        
         if _buy_and_use_button then
             pushbutton_instant(_buy_and_use_button, delay)
         elseif _buy_button then
             pushbutton_instant(_buy_button, delay)
-        elseif _sell_button then
-            pushbutton_instant(_sell_button, delay)
+        elseif _use_button then
+            -- why use a function when this will work directly? 
+            G.FUNCS.use_card({config = {ref_table = card}})
         end
     end, delay)
 end
@@ -303,14 +326,12 @@ function Middleware.c_choose_booster_cards()
                 end
             end
 
-            sendDebugMessage(G.STATE)
-            sendDebugMessage(G.GAME.pack_choices)
             -- actually make the change
             if selected_card then
                 clickcard(selected_card)
                 usecard(selected_card)
             end
-            
+
             Middleware.choosingboostercards = false
 
             -- if we have more choices to make, re-queue the action
@@ -355,18 +376,24 @@ function Middleware.c_shop()
     local _b_reroll_shop = Middleware.BUTTONS.REROLL and Middleware.BUTTONS.REROLL.config and Middleware.BUTTONS.REROLL.config.button
 
     local _cards_to_buy = { }
-    for i = 1, #G.shop_jokers.cards do
-        _cards_to_buy[i] = G.shop_jokers.cards[i].cost <= G.GAME.dollars and G.shop_jokers.cards[i] or nil
+    if G.shop_jokers.cards and #G.shop_jokers.cards > 0 then
+        for i = 1, #G.shop_jokers.cards do
+            _cards_to_buy[i] = G.shop_jokers.cards[i].cost <= G.GAME.dollars and G.shop_jokers.cards[i] or nil
+        end
     end
 
     local _vouchers_to_buy = { }
-    for i = 1, #G.shop_vouchers.cards do
-        _vouchers_to_buy[i] = G.shop_vouchers.cards[i].cost <= G.GAME.dollars and G.shop_vouchers.cards[i] or nil
+    if G.shop_vouchers.cards and #G.shop_vouchers.cards > 0 then
+        for i = 1, #G.shop_vouchers.cards do
+            _vouchers_to_buy[i] = G.shop_vouchers.cards[i].cost <= G.GAME.dollars and G.shop_vouchers.cards[i] or nil
+        end
     end
 
     local _boosters_to_buy = { }
-    for i = 1, #G.shop_booster.cards do
-        _boosters_to_buy[i] = G.shop_booster.cards[i].cost <= G.GAME.dollars and G.shop_booster.cards[i] or nil
+    if G.shop_booster.cards and #G.shop_booster.cards > 0 then
+        for i = 1, #G.shop_booster.cards do
+            _boosters_to_buy[i] = G.shop_booster.cards[i].cost <= G.GAME.dollars and G.shop_booster.cards[i] or nil
+        end
     end
 
     local _choices = { }
@@ -386,6 +413,7 @@ function Middleware.c_shop()
     end,
 
     function(_action, _card)
+        sendDebugMessage("hello!")
         if _action == Bot.ACTIONS.END_SHOP then
             pushbutton(Middleware.BUTTONS.NEXT_ROUND)
             _done_shopping = true
@@ -393,18 +421,20 @@ function Middleware.c_shop()
             pushbutton(Middleware.BUTTONS.REROLL)
         elseif _action == Bot.ACTIONS.BUY_CARD then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]], 1)
+            usecard(G.shop_jokers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_VOUCHER then
             clickcard(G.shop_vouchers.cards[_card[1]])
-            usecard(G.shop_vouchers.cards[_card[1]], 1)
+            usecard(G.shop_vouchers.cards[_card[1]])
         elseif _action == Bot.ACTIONS.BUY_BOOSTER then
             _done_shopping = true
             clickcard(G.shop_booster.cards[_card[1]])
-            usecard(G.shop_booster.cards[_card[1]], 1)
+            usecard(G.shop_booster.cards[_card[1]])
         elseif _action == Bot.ACTIONS.SELL_JOKER then
-            clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]], 1)
+            clickcard(G.jokers.cards[_card[1]])
+            sellcard(G.jokers.cards[_card[1]])
         end
+        
+        sendDebugMessage("hello again!")
 
         if not _done_shopping then
             queueaction(function()
@@ -460,7 +490,9 @@ function Middleware.c_rearrange_consumables()
     function(_action, _order)
         -- Middleware.c_rearrange_hand()
 
-        if not _order or #_order ~= #G.consumables.cards  then return end
+        if not G.consumeables then return end
+        if not G.consumeables.cards then return end
+        if not _order or #_order ~= #G.consumeables.cards  then return end
 
         queueaction(function()
             for k,v in ipairs(_order) do
@@ -476,29 +508,42 @@ function Middleware.c_rearrange_consumables()
 end
 
 function Middleware.c_use_or_sell_consumables()
+    
+    sendDebugMessage("We are in the outer sell consumables function!")
 
     firewhenready(function()
-        local _action, _cards = Bot.use_or_sell_consumables()
-        if _action == Bot.ACTIONS.SELL_CONSUMABLE and _cards then
-            if G.consumables == nil or G.consumables.cards == nil then
-                return false
-            end
-        end
-
-        if _action and _cards then
-            return true, _action, _cards
-        elseif _action then
-            return true, _action, nil
+        local _action, _cards, _hand_cards = Bot.use_or_sell_consumables()
+        if _action then
+            return true, _action, _cards, _hand_cards
         else
             return false
         end
     end,
 
-    function(_action, _cards)
-        if _action == Bot.ACTIONS.USE_CONSUMABLE and _cards then
+    function(_action, _cards, _hand_cards)
+        sendDebugMessage("We are in the inner sell consumables function!")
+        if _action == Bot.ACTIONS.SELL_CONSUMABLE and _cards then
             for i = 1, #_cards do
-                clickcard(G.consumables.cards[_cards[i]])
-                usecard(G.consumables.cards[_cards[i]], 1)
+                if G.consumeables.cards and G.consumeables.cards[_cards[i]] then
+                    clickcard(G.consumeables.cards[_cards[i]])
+                    sellcard(G.consumeables.cards[_cards[i]], 1)
+                end
+            end
+        elseif _action == Bot.ACTIONS.USE_CONSUMABLE and _cards then
+            sendDebugMessage("We are using a consumable!")
+            if (_hand_cards ~= nil) then
+                for i = 1, #_hand_cards do
+                    sendDebugMessage("Clicking cards in hand!")
+                    if G.hand.cards and G.hand.cards[_hand_cards[i]] then
+                        sendDebugMessage("Clicking card in hand!")
+                        clickcard(G.hand.cards[_hand_cards[i]])
+                    end
+                end
+            end
+            if G.consumeables.cards and G.consumeables.cards[_cards[1]] then
+                sendDebugMessage("Clicking consumable card!")
+                clickcard(G.consumeables.cards[_cards[1]])
+                usecard(G.consumeables.cards[_cards[1]], 2)
             end
         end
         -- Jump straight to play hand

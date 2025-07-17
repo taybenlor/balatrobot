@@ -194,7 +194,7 @@ Bot.ACTIONPARAMS[Bot.ACTIONS.SKIP_BOOSTER_PACK] = {
 --     end,
 -- }
 Bot.ACTIONPARAMS[Bot.ACTIONS.USE_CONSUMABLE] = {
-    num_args = 2,
+    num_args = 3,
     func = "use_or_sell_consumables",
     isvalid = function(action)
         -- TODO implement this
@@ -401,7 +401,7 @@ function Bot.rearrange_jokers()
 end
 
 function Bot.use_or_sell_consumables()
-
+    
 end
 
 function Bot.rearrange_consumables()

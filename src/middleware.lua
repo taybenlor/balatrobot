@@ -124,32 +124,35 @@ end
 local function usecard(card, delay)
 
     queueaction(function()
-        local _use_button = nil
-        local _use_button = card.children.use_button and card.children.use_button.definition
-        if _use_button and _use_button.config.button == nil then
-            local _node_index = card.ability.consumeable and 2 or 1
-            _use_button = _use_button.nodes[_node_index]
+        
+        -- if _use_button and _use_button.config.button == nil then
+        --     local _node_index = card.ability.consumeable and 2 or 1
+        --     _use_button = _use_button.nodes[_node_index]
 
-            if card.area and card.area.config.type == 'joker' then
-                sendDebugMessage("WE ARE HERE!")
-                local _use_button = card.children.use_button.definition.nodes[1].nodes[1].nodes[1].nodes[1]
-                pushbutton_instant(_use_button, delay)
-            else
-                pushbutton_instant(_use_button, delay)
-            end
+        --     if card.area and card.area.config.type == 'joker' then
+        --         sendDebugMessage("WE ARE HERE!")
+        --         local _use_button = card.children.use_button
+        --         sendDebugMessage("WEVE GOT A USE BUTTON")
+        --         -- local _use_button = card.children.use_button.definition.nodes[1].nodes[1].nodes[1].nodes[1]
+        --         pushbutton_instant(_use_button, delay)
+        --     else
+        --         pushbutton_instant(_use_button, delay)
+        --     end
 
-            return
-        end
+        --     return
+        -- end
         local _buy_and_use_button = card.children.buy_and_use_button and card.children.buy_and_use_button.definition
         local _buy_button = card.children.buy_button and card.children.buy_button.definition
-        local _sell_button = card.children.sell_button and card.children.sell_button.definition
-
+        local _use_button = card.children.use_button and card.children.use_button.definition
+        
         if _buy_and_use_button then
             pushbutton_instant(_buy_and_use_button, delay)
         elseif _buy_button then
             pushbutton_instant(_buy_button, delay)
-        elseif _sell_button then
-            pushbutton_instant(_sell_button, delay)
+        elseif _use_button then
+            sendDebugMessage("WE ARE HERE!")
+            G.FUNCS.use_card({config = {ref_table = card}})
+            -- pushbutton_instant(_use_button, delay)
         end
     end, delay)
 end
@@ -532,7 +535,7 @@ function Middleware.c_use_or_sell_consumables()
             if G.consumeables.cards and G.consumeables.cards[_cards[1]] then
                 sendDebugMessage("Clicking consumable card!")
                 clickcard(G.consumeables.cards[_cards[1]])
-                usecard(G.consumeables.cards[_cards[1]], 1)
+                usecard(G.consumeables.cards[_cards[1]], 2)
             end
         end
         -- Jump straight to play hand

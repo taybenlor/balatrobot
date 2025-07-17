@@ -101,6 +101,26 @@ local function clickcard(card, delay)
     end, delay)
 end
 
+local function sellcard(card, delay)
+    queueaction(function()
+        local _use_button = nil
+        local _use_button = card.children.use_button and card.children.use_button.definition
+        if _use_button and _use_button.config.button == nil then
+            local _node_index = card.ability.consumeable and 2 or 1
+            _use_button = _use_button.nodes[_node_index]
+
+            if card.area and card.area.config.type == 'joker' then
+                local _use_button = card.children.use_button.definition.nodes[1].nodes[1].nodes[1].nodes[1]
+                pushbutton_instant(_use_button, delay)
+            else
+                pushbutton_instant(_use_button, delay)
+            end
+
+            return
+        end
+    end, delay)
+end
+
 local function usecard(card, delay)
 
     queueaction(function()
@@ -111,6 +131,7 @@ local function usecard(card, delay)
             _use_button = _use_button.nodes[_node_index]
 
             if card.area and card.area.config.type == 'joker' then
+                sendDebugMessage("WE ARE HERE!")
                 local _use_button = card.children.use_button.definition.nodes[1].nodes[1].nodes[1].nodes[1]
                 pushbutton_instant(_use_button, delay)
             else
@@ -303,14 +324,12 @@ function Middleware.c_choose_booster_cards()
                 end
             end
 
-            sendDebugMessage(G.STATE)
-            sendDebugMessage(G.GAME.pack_choices)
             -- actually make the change
             if selected_card then
                 clickcard(selected_card)
                 usecard(selected_card)
             end
-            
+
             Middleware.choosingboostercards = false
 
             -- if we have more choices to make, re-queue the action
@@ -403,7 +422,7 @@ function Middleware.c_shop()
             usecard(G.shop_booster.cards[_card[1]])
         elseif _action == Bot.ACTIONS.SELL_JOKER then
             clickcard(G.shop_jokers.cards[_card[1]])
-            usecard(G.shop_jokers.cards[_card[1]])
+            sellcard(G.shop_jokers.cards[_card[1]], 1)
         end
 
         if not _done_shopping then
@@ -460,7 +479,9 @@ function Middleware.c_rearrange_consumables()
     function(_action, _order)
         -- Middleware.c_rearrange_hand()
 
-        if not _order or #_order ~= #G.consumables.cards  then return end
+        if not G.consumeables then return end
+        if not G.consumeables.cards then return end
+        if not _order or #_order ~= #G.consumeables.cards  then return end
 
         queueaction(function()
             for k,v in ipairs(_order) do
@@ -476,29 +497,42 @@ function Middleware.c_rearrange_consumables()
 end
 
 function Middleware.c_use_or_sell_consumables()
+    
+    sendDebugMessage("We are in the outer sell consumables function!")
 
     firewhenready(function()
-        local _action, _cards = Bot.use_or_sell_consumables()
-        if _action == Bot.ACTIONS.SELL_CONSUMABLE and _cards then
-            if G.consumables == nil or G.consumables.cards == nil then
-                return false
-            end
-        end
-
-        if _action and _cards then
-            return true, _action, _cards
-        elseif _action then
-            return true, _action, nil
+        local _action, _cards, _hand_cards = Bot.use_or_sell_consumables()
+        if _action then
+            return true, _action, _cards, _hand_cards
         else
             return false
         end
     end,
 
-    function(_action, _cards)
-        if _action == Bot.ACTIONS.USE_CONSUMABLE and _cards then
+    function(_action, _cards, _hand_cards)
+        sendDebugMessage("We are in the inner sell consumables function!")
+        if _action == Bot.ACTIONS.SELL_CONSUMABLE and _cards then
             for i = 1, #_cards do
-                clickcard(G.consumables.cards[_cards[i]])
-                usecard(G.consumables.cards[_cards[i]], 1)
+                if G.consumeables.cards and G.consumeables.cards[_cards[i]] then
+                    clickcard(G.consumeables.cards[_cards[i]])
+                    sellcard(G.consumeables.cards[_cards[i]], 1)
+                end
+            end
+        elseif _action == Bot.ACTIONS.USE_CONSUMABLE and _cards then
+            sendDebugMessage("We are using a consumable!")
+            if (_hand_cards ~= nil) then
+                for i = 1, #_hand_cards do
+                    sendDebugMessage("Clicking cards in hand!")
+                    if G.hand.cards and G.hand.cards[_hand_cards[i]] then
+                        sendDebugMessage("Clicking card in hand!")
+                        clickcard(G.hand.cards[_hand_cards[i]])
+                    end
+                end
+            end
+            if G.consumeables.cards and G.consumeables.cards[_cards[1]] then
+                sendDebugMessage("Clicking consumable card!")
+                clickcard(G.consumeables.cards[_cards[1]])
+                usecard(G.consumeables.cards[_cards[1]], 1)
             end
         end
         -- Jump straight to play hand

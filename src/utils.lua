@@ -41,8 +41,15 @@ function Utils.getHandData()
 
     if G and G.hand and G.hand.cards then
         for i = 1, #G.hand.cards do
-            local _card = Utils.getCardData(G.hand.cards[i])
-            _hand[i] = _card
+            local _hand_card = {}
+            _hand_card.label = G.hand.cards[i].label
+            _hand_card.cost = G.hand.cards[i].cost
+            _hand_card.debuff = G.hand.cards[i].debuff
+            _hand_card.name = G.hand.cards[i].config.card.name
+            _hand_card.suit = G.hand.cards[i].config.card.suit
+            _hand_card.value = G.hand.cards[i].config.card.value
+            _hand_card.card_key = G.hand.cards[i].config.card_key
+            _hand[i] = _hand_card
         end
     end
 
@@ -54,18 +61,19 @@ function Utils.getPackCardsData()
 
     if G and G.pack_cards and G.pack_cards.cards then
         for i = 1, #G.pack_cards.cards do
-            local _card = {}
+            local _pack_card = {}
             local _ability = {}
-            _card.label = G.pack_cards.cards[i].label
-            _card.name = G.pack_cards.cards[i].config.card.name
-            -- _card.suit = G.deck.cards[i].config.card.suit
-            -- _card.value = G.deck.cards[i].config.card.value
-            -- _card.card_key = G.deck.cards[i].config.card.card_key
+            _pack_card.label = G.pack_cards.cards[i].label
+            _pack_card.name = G.pack_cards.cards[i].config.card.name
+
+            -- this will allow us to determine if it is a tarot/planet/spectral card
+            -- we don't want the full ability data because that causes socket connection issues
             if G.pack_cards.cards[i].ability then
                 _ability.set = G.pack_cards.cards[i].ability.set
+                _ability.max_highlighted = G.pack_cards.cards[i].ability.max_highlighted
             end
-            _card.ability = _ability
-            _pack[i] = _card
+            _pack_card.ability = _ability
+            _pack[i] = _pack_card
         end
     end
 
@@ -96,8 +104,19 @@ function Utils.getConsumablesData()
 
     if G and G.consumeables and G.consumeables.cards then
         for i = 1, #G.consumeables.cards do
-            local _card = Utils.getCardData(G.consumeables.cards[i])
-            _consumables[i] = _card
+            local _consumable = {}
+            local _ability = {}
+            _consumable.label = G.consumeables.cards[i].label
+            _consumable.name = G.consumeables.cards[i].config.card.name
+
+            -- this will allow us to determine if it is a tarot/planet/spectral card
+            -- we don't want the full ability data because that causes socket connection issues
+            if G.consumeables.cards[i].ability then
+                _ability.set = G.consumeables.cards[i].ability.set
+                _ability.max_highlighted = G.consumeables.cards[i].ability.max_highlighted
+            end
+            _consumable.ability = _ability
+            _consumables[i] = _consumable
         end
     end
 

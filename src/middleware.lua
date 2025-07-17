@@ -421,8 +421,8 @@ function Middleware.c_shop()
             clickcard(G.shop_booster.cards[_card[1]])
             usecard(G.shop_booster.cards[_card[1]])
         elseif _action == Bot.ACTIONS.SELL_JOKER then
-            clickcard(G.shop_jokers.cards[_card[1]])
-            sellcard(G.shop_jokers.cards[_card[1]], 1)
+            clickcard(G.jokers.cards[_card[1]])
+            sellcard(G.jokers.cards[_card[1]], 1)
         end
 
         if not _done_shopping then

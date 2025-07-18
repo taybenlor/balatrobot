@@ -268,7 +268,6 @@ class Bot:
     def run(self):
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                print("Connecting to Balatro...")
                 s.settimeout(5)
                 msg = bytes("HELLO", "utf-8")
                 s.sendto(msg, self.addr)

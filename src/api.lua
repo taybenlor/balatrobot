@@ -19,6 +19,8 @@ function BalatrobotAPI.notifyapiclient()
     if BalatrobotAPI.socket and port_or_nil ~= nil then
         sendDebugMessage(_gamestate.waitingFor)
         BalatrobotAPI.socket:sendto(string.format("%s", _gamestateJsonString), msg_or_ip, port_or_nil)
+    else
+        sendDebugMessage('No socket or port_or_nil is nil')
     end
 end
 

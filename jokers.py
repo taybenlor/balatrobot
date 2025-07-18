@@ -181,41 +181,65 @@ secret_hand_scoring = """
 | **160 Chips × 16 Mult**| Flush Five      | Five cards with the same rank and same suit.                                         | A♠, A♠, A♠, A♠, A♠           |
 """
 
+scoring_calculation = """
+
+"""
+
 scoring_rules = """
-# Scoring Rules for Balatro
-## Basic Scoring table
+# Balatro Hand Scoring Instructions
 
+Follow these exact steps to calculate the score of a played hand in *Balatro*, including all modifiers, chip/multiplier boosts, and effects.
+
+### 1. **Identify the Best Poker Hand**
+- Detect the highest-ranking valid poker hand from played cards (e.g., Flush, Full House, Four of a Kind).
+- Use **only the cards involved in that hand** for base scoring, *unless* modifiers (e.g. Splash, Stone cards) state otherwise.
+
+### 2. **Determine Base Chips and Multiplier**
+**Poker Hand Scoring Table**:
 {poker_hand_scoring}
-
-### Held-in-Hand Effects
-- Applies to cards in your hand, scored or not.
-- Effects include:
-    - Steel-enhanced cards (×1.5 mult)
-    - Baron joker (mult from Kings)
-    - Shoot the Moon (mult from Queens)
-    - Reserved Parking ($ chance from face cards)
-    - Raised Fist (mult from lowest-ranked card)
-- Red Seals trigger these effects twice.
-- “The Hook” discards your hand before evaluation, disabling held effects.
-- Debuffed cards do not trigger held effects.
-
-### Joker Effects
-- Evaluated left to right.
-- Jokers give +chips, +mult, or ×mult, based on their conditions.
-- Effects can be modified by Joker enhancements:
-    - Foil: +50 chips
-    - Holographic: +10 mult
-    - Polychrome: ×1.5 mult
-- Order matters when:
-    - Using Blueprint/Brainstorm
-    - Combining +mult and ×mult jokers (always put ×mult to the right for maximum effect)
-- Upgradeable jokers trigger upgrades before giving effect.
-- Degrading jokers (e.g., Ice Cream) apply effect before degrading.
-
-### Secret Poker Hands
-There are three "secret" Poker Hands that are only possible through adding cards to your deck, or changing existing cards with Consumables or Jokers.
-
+**Secret Hand Scoring Table**:
 {secret_hand_scoring}
+
+- Look up the hand's base **Chips** and **Multiplier** (Level 1).
+- Add bonus Chips/Mult from hand *level ups* (e.g. via Planet cards).
+  - Example: Level 2 Flush = 40 Chips + 15 = 55 Chips, 4× Mult + 2 = 6× Mult.
+- Apply any **Blind effects** that alter base values (e.g., halving, level reduction).
+
+### 3. **Apply Bonus Chip Effects**
+- **Jokers** that add chips per condition (e.g., +5 Chips per red card).
+- **Stone Cards**: Always add their flat chip values.
+- **Other chip modifiers**: Include Tarot, Spectral, card stickers, etc.
+
+**Result: Final Chips total (before scoring)**
+
+### 4. **Apply Additive Multiplier Boosts**
+- Add **flat Mult increases** from:
+  - Jokers (e.g., +2 Mult for every played Heart).
+  - Played cards with Mult stickers or effects.
+  - Tarot/Spectral effects with fixed Mult boosts.
+
+Add all to base Mult to get **intermediate Multiplier**.
+
+### 5. **Apply Multiplicative Multiplier Effects**
+- Multiply the current Mult by:
+  - Joker effects (e.g., ×1.5 Mult if all cards are red).
+  - Spectral cards (e.g., Glass doubles Mult).
+- Apply in *any* order; they stack multiplicatively.
+
+**Result: Final Multiplier total**
+
+### 6. **Compute Base Score**
+- Use:  
+  ```
+  Final Score = Final Chips × Final Multiplier
+  ```
+
+Example:  
+If Chips = 100, Mult = 12 → Final Score = 1200
+
+### 7. **Apply Post-Score Effects**
+- **Retriggered cards**: If a Joker or card retriggers scoring (e.g., replay the highest card), apply and add extra score.
+- **Splash effect**: If active, all played cards score (not just combo cards).
 """
 
 shop_strategy = """
